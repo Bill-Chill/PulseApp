@@ -449,7 +449,7 @@ void drawPulse() {
       } else if(bt.type == 53) {
         int y = bt.y+5; int x = bt.x+150; 
         drawSeMaiPattern(x, y);
-        drawSeMaiPattern(x+5, y+5);
+        drawSeMaiPattern(x+10, y+5);
       } else if(bt.type == 61 || bt.type == 64 || bt.type == 65) {
         int idx = (int)(bt.idx/5);
         int x = 50 + area_space*(idx%3); 
@@ -754,4 +754,5 @@ String getPulseObj() {
     }
   }
   return str;
+
 }

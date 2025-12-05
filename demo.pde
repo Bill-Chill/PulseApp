@@ -19,8 +19,8 @@ PFont fontWu;
 PFont fontTongueText; 
 
 int currentTongueType = 0; 
-float textX = 665; 
-float textY = 270; 
+float textX = 580; 
+float textY = 245; 
 boolean draggingText = false;
 float dragOffsetX = 0;
 float dragOffsetY = 0;
@@ -51,7 +51,7 @@ void setup() {
   fontStar = createFont("Microsoft JhengHei, PingFang TC, sans-serif", 24);
   fontArrow = createFont("PingFang TC, Microsoft JhengHei, sans-serif", 28);
   fontWu = createFont("PingFang TC, Microsoft JhengHei, sans-serif", 20);
-  fontTongueText = createFont("PingFang TC, Microsoft JhengHei, sans-serif", 12);
+  fontTongueText = createFont("PingFang TC, Microsoft JhengHei, sans-serif", 18);
 
   initPulseArea();
   bgDraw();
@@ -236,13 +236,13 @@ void drawWeakPulseLine(int x, int y, int count) {
 }
 
 void drawTongue() {
-  int tx = 745; 
-  int ty = 230; 
+  int tx = 740; 
+  int ty = 245; 
   int w = 40; 
   
-  if (currentTongueType == 1) w = 25;
+  if (currentTongueType == 1) w = 30;
   else if (currentTongueType == 2) w = 40;
-  else if (currentTongueType == 3) w = 60;
+  else if (currentTongueType == 3) w = 50;
   
   if (currentTongueType > 0) {
     noFill();
@@ -250,8 +250,8 @@ void drawTongue() {
     strokeWeight(3);
     
     beginShape();
-    vertex(tx - w/2, ty);
-    bezierVertex(tx - w/2, ty + 55, tx + w/2, ty + 55, tx + w/2, ty);
+    vertex(tx - w*2/3, ty);
+    bezierVertex(tx - w*2/3, ty + 70, tx + w*2/3, ty + 70, tx + w*2/3, ty);
     endShape();
   }
   
@@ -754,5 +754,4 @@ String getPulseObj() {
     }
   }
   return str;
-
 }

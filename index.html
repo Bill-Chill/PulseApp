@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="processing.js" type="text/javascript"></script>
+    <script src="jquery-1.5.2.min.js" type="text/javascript"></script>
+    <script src="jquery.blockUI.js" type="text/javascript"></script>
+    <title>中醫脈診圖示產生器</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background: #f5f5f5;
+            margin: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .canvas-area {
+            flex: 0 0 780px;
+        }
+
+        canvas {
+            border: 1px solid #999;
+            background: #fff;
+            box-shadow: 2px 2px 5px #ccc;
+        }
+
+        .controls-area {
+            flex: 1;
+            background: #fff;
+            padding: 1px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 12px;
+        }
+
+        .flex-row>.control-section {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .control-section {
+            display: flex;
+            margin-bottom: 12px;
+            background: #fcfcfc;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .section-sidebar {
+            width: 24px;
+            background: #f0f0f0;
+            border-right: 1px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .section-sidebar:hover { background: #e0e0e0; }
+        .section-sidebar:active { background: #d0d0d0; }
+
+        .recent-tag {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000000;
+            background-color: #ffeb3b;
+            padding: 4px 2px;
+            border-radius: 3px;
+            display: none;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .section-buttons {
+            padding: 0px;
+            flex: 1;
+        }
+
+        .pulse-btn {
+            display: inline-block;
+            margin: 3px;
+            padding: 2px 3px;
+            border: 1px solid #000000;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 16px;
+            transition: all 0.2s;
+            color: #000000;
+        }
+
+        .pulse-btn:hover { background: #f0f0f0; border-color: #bbb; }
+        .pulse-btn.active { background: #e3f2fd; border-color: #2196F3; color: #0d47a1; font-weight: bold; }
+        .pulse-btn.waiting {
+            background: #ffebee;
+            border-color: #ef5350;
+            color: #c62828;
+            animation: pulse-wait 1s infinite;
+        }
+        @keyframes pulse-wait {
+            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(244, 67, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+        }
+
+        .spacer {
+            display: inline-block;
+            width: 60px;
+            height: 1px;
+        }
+
+        .mode-switch {
+            margin-bottom: 15px;
+            font-size: 18px;
+            padding: 3px 3px;
+            background: #fff8e1;
+            border: 1px solid #ffe0b2;
+            border-radius: 5px;
+        }
+        .mode-header { font-weight: bold; color: #f57f17; display: flex; align-items: center; }
+        .mode-details { margin-top: 5px; font-size: 12px; color: #666; display: none; padding-left: 20px; border-top: 1px solid #ffe0b2; padding-top: 5px; }
+        .info-icon { display: inline-block; width: 16px; height: 16px; background: #f57f17; color: white; border-radius: 50%; text-align: center; line-height: 16px; font-size: 11px; margin-left: 5px; cursor: pointer; }
+
+        .action-bar {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            text-align: right;
+        }
+
+        .btn-generate { background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-clear { background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 5px; }
+        .btn-clear.active { background: #d32f2f; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
+        .btn-clear-all { background: #607d8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 5px; }
+
+        .tongue-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+        }
+        
+        .tongue-label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        
+        .tongue-btn-group {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .tongue-input {
+            flex-grow: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+            height: 32px; 
+            resize: vertical; 
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .tongue-input:focus {
+            border-color: #2196F3;
+            outline: none;
+        }
+
+    </style>
+    <script type="text/javascript">
+        function getP() {
+            return Processing.getInstanceById('pulse_canvas');
+        }
+
+        var isBatchMode = false;
+        var pendingBasePulse = 0; 
+
+        function setBatchMode(enabled) {
+            isBatchMode = enabled;
+            $(".pulse-btn").removeClass("active");
+            $(".pulse-btn").removeClass("waiting");
+            $("#image_cancel").removeClass("active");
+            pendingBasePulse = 0;
+            $("#batchModeToggle").prop("checked", enabled);
+            var p = getP();
+            if (p) p.setBatchMode(0);
+        }
+
+        function applyPulse(type) {
+            var p = getP();
+            if (!p) return;
+            $("#image_cancel").removeClass("active");
+            if (isBatchMode) {
+                $(".pulse-btn").removeClass("waiting");
+                pendingBasePulse = 0;
+                p.setBatchMode(type);
+                return;
+            }
+
+            if (type == 11 || type == 19) {
+                pendingBasePulse = type;
+                $(".pulse-btn").removeClass("waiting");
+                $('.pulse-btn[data-type="' + type + '"]').addClass("waiting");
+                p.addPulseType(type);
+            } else if (type >= 13 && type <= 17) {
+                if (pendingBasePulse == 11 || pendingBasePulse == 19) {
+                    p.addPulseWithWidth(pendingBasePulse, type);
+                    pendingBasePulse = 0; 
+                    $(".pulse-btn").removeClass("waiting");
+                } else {
+                     p.addPulseType(type);
+                }
+            } else {
+                pendingBasePulse = 0;
+                $(".pulse-btn").removeClass("waiting");
+                if (type >= 90) p.addLongPulseType(type);
+                else if (type >= 60 && type < 70) p.addFastPulseType(type);
+                else if ((type >= 30 && type < 60)) p.addPulseTypeGroup(type);
+                else p.addPulseType(type);
+            }
+        }
+
+        function handlePulseClick(type, btnElement) {
+            if (isBatchMode) {
+                $(".pulse-btn").removeClass("active");
+                $(btnElement).addClass("active");
+            }
+            $(btnElement).css("background-color", "#ffffcc");
+            setTimeout(function(){ $(btnElement).css("background-color", ""); }, 150);
+
+            var section = $(btnElement).closest('.control-section');
+            var pulseName = $(btnElement).text();
+            var recentTag = section.find('.recent-tag');
+            section.find('.section-sidebar').data("last-type", type);
+            recentTag.text(pulseName).show();
+            applyPulse(type);
+        }
+
+        function handleSidebarClick(sidebarElement) {
+            var lastType = $(sidebarElement).data("last-type");
+            if (lastType) {
+                applyPulse(lastType);
+                $(sidebarElement).css("background-color", "#ffecb3");
+                setTimeout(function() { $(sidebarElement).css("background-color", ""); }, 150);
+            }
+        }
+
+        function handleTongueClick(type, btnElement) {
+            var p = getP();
+            if(p) p.setTongueType(type);
+            $(".tongue-btn").removeClass("active");
+            $(btnElement).addClass("active");
+        }
+        
+        function updateTongueText() {
+            var txt = $("#tongue_text").val();
+            var p = getP();
+            if(p) p.setTongueNote(txt);
+        }
+
+        $(document).ready(function() {
+            var keyMap = {
+                '1': 11, '2': 19, '3': 12, '4': 13, '5': 14, '6': 15, '7': 16, '8': 17, '9': 18,
+                'q': 21, 'w': 22, 'e': 23, 'r': 24, 't': 25,
+                'a': 61, 's': 64, 'd': 65, 'f': 62, 'g': 63,
+                'z': 31, 'x': 34, 'c': 52, 'v': 53, 
+                'b': 32, 'n': 33, 'm': 51,
+                ',': 38, '.': 36, '/': 95, 'l': 40, ';': 96,
+                'k': 41, 'j': 35, 'h': 37, 'u': 39, 'o': 99,
+                '!': 71, '@': 72, '#': 73, '$': 74, '%': 75, '^': 76,
+                'Q': 81, 'W': 82, 'E': 83, 'A': 91, 'S': 92
+            };
+
+            $(".pulse-btn").each(function() {
+                var type = $(this).data("type");
+                var keyChar = Object.keys(keyMap).find(key => keyMap[key] === type);
+                if(keyChar) $(this).attr('title', '快捷鍵: ' + keyChar);
+                $(this).click(function() { handlePulseClick(type, this); });
+            });
+
+            $(".section-sidebar").click(function() { handleSidebarClick(this); });
+            
+            $(".tongue-btn").click(function() {
+                var type = $(this).data("type");
+                handleTongueClick(type, this);
+            });
+            
+            $("#tongue_text").blur(function(){ updateTongueText(); });
+            $("#tongue_text").keydown(function(e){ 
+                if(e.which == 13 && !e.shiftKey) { 
+                    e.preventDefault();
+                    updateTongueText(); 
+                    $(this).blur();
+                }
+            });
+
+            $(document).keydown(function(e) {
+                if ($(e.target).is('input, textarea')) return;
+                var key = e.key || (e.originalEvent ? e.originalEvent.key : null);
+                var code = e.which || e.keyCode;
+
+                if (key === " " || code === 32) {
+                    e.preventDefault(); 
+                    var isChecked = $("#batchModeToggle").is(":checked");
+                    setBatchMode(!isChecked);
+                    return;
+                }
+
+                if (key && keyMap[key]) {
+                    var type = keyMap[key];
+                    var btn = $('.pulse-btn[data-type="' + type + '"]');
+                    if(btn.length) handlePulseClick(type, btn);
+                }
+            });
+
+            $("#batchModeToggle").change(function() { setBatchMode($(this).is(":checked")); });
+
+            $(".info-icon, .mode-header label").click(function(e) {
+                if (e.target.tagName !== 'INPUT') { $(".mode-details").slideToggle(200); }
+            });
+
+            $("#close").click(function() { $.unblockUI(); });
+
+            $("#image_cancel").click(function() {
+                var p = getP();
+                if (!p) return;
+                if (isBatchMode) {
+                    p.setBatchMode(-1); 
+                    $(".pulse-btn").removeClass("active");
+                    $(this).addClass("active");
+                } else {
+                    p.cancelPulse();
+                }
+            });
+            
+            $("#image_clear_all").click(function() {
+                if(confirm("確定要清除所有脈象嗎？")) {
+                    var p = getP();
+                    if (p) {
+                        p.clearAllPulses();
+                        $(".tongue-btn").removeClass("active");
+                        $("#tongue_text").val("");
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div class="canvas-area">
+            <canvas width="780" height="550" id="pulse_canvas" data-processing-sources="demo.pde"></canvas>
+        </div>
+
+        <div class="controls-area">
+
+            <div class="mode-switch">
+                <div class="mode-header">
+                    <label style="cursor: pointer;">
+                        <input type="checkbox" id="batchModeToggle"> 啟用「快速填寫模式」
+                    </label>
+                    <span class="info-icon">?</span>
+                </div>
+                <div class="mode-details">
+                    開啟後：先點選右側脈象按鈕(變藍色)，再連續點擊左側圖表格子即可填入。<br>
+                    關閉後：先點選左側圖表格子(變黃色)，再點擊右側脈象按鈕填入。
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="11">弱脈</button>
+                        <button class="pulse-btn" data-type="19">半弱脈</button>
+                        <button class="pulse-btn" data-type="12">細脈</button>
+                        <br>
+                        <button class="pulse-btn" data-type="13">小脈1</button>
+                        <button class="pulse-btn" data-type="14">小脈2</button>
+                        <button class="pulse-btn" data-type="15">小脈3</button>
+                        <br>
+                        <button class="pulse-btn" data-type="16">大脈1</button>
+                        <button class="pulse-btn" data-type="17">大脈2</button>
+                        <button class="pulse-btn" data-type="18">牢脈</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="21">弦脈1</button>
+                        <br>
+                        <button class="pulse-btn" data-type="22">緊脈2</button>
+                        <button class="pulse-btn" data-type="23">緊脈3</button>
+                        <br>
+                        <button class="pulse-btn" data-type="24">緊脈4</button>
+                        <button class="pulse-btn" data-type="25">刀脈</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="61">數脈1</button>
+                        <button class="pulse-btn" data-type="64">數脈2</button>
+                        <button class="pulse-btn" data-type="65">數脈3</button>
+                        <br>
+                        <button class="pulse-btn" data-type="63">疾脈</button>
+                        <br>
+                        <button class="pulse-btn" data-type="62">遲脈</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="71">鼓動大1</button>
+                        <button class="pulse-btn" data-type="72">鼓動大2</button>
+                        <button class="pulse-btn" data-type="73">鼓動大3</button>
+                        <br>
+                        <button class="pulse-btn" data-type="74">鼓動弱1</button>
+                        <button class="pulse-btn" data-type="75">鼓動弱2</button>
+                        <button class="pulse-btn" data-type="76">鼓動弱3</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="81">大於下脈</button>
+                        <button class="pulse-btn" data-type="82">等於下脈</button>
+                        <button class="pulse-btn" data-type="83">小於下脈</button>
+                        <br>
+                        <button class="pulse-btn" data-type="91">長脈</button>
+                        <button class="pulse-btn" data-type="92">伏脈</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="31">虛脈</button>
+                        <button class="pulse-btn" data-type="34">緩脈</button>
+                        <span style="border-left:1px solid #ddd; margin:0 5px;"></span>
+                        <button class="pulse-btn" data-type="52">澀脈1</button>
+                        <button class="pulse-btn" data-type="53">澀脈2</button>
+                        <br>
+                        <button class="pulse-btn" data-type="32">滑脈</button>
+                        <button class="pulse-btn" data-type="33">洪脈</button>
+                        <span style="border-left:1px solid #ddd; margin:0 5px;"></span>
+                        <button class="pulse-btn" data-type="51">黏脈</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-sidebar" title="點擊重複上一次動作"><span class="recent-tag"></span></div>
+                    <div class="section-buttons">
+                        <button class="pulse-btn" data-type="38">散脈</button>
+                        <button class="pulse-btn" data-type="36">動脈</button>
+                        <button class="pulse-btn" data-type="95">癌脈</button>
+                        <button class="pulse-btn" data-type="40">濡脈</button>
+                        <button class="pulse-btn" data-type="96">暑脈</button>
+                        <br>
+                        <button class="pulse-btn" data-type="41">代脈</button>
+                        <button class="pulse-btn" data-type="35">豆脈</button>
+                        <button class="pulse-btn" data-type="37">芤脈</button>
+                        <button class="pulse-btn" data-type="39">革脈</button>
+                        <button class="pulse-btn" data-type="99" style="color:#d32f2f; border-color:#ffcdd2; background:#ffebee;">無脈</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="tongue-controls">
+                    <div class="tongue-label">舌象 & 備註：</div>
+                    <div class="tongue-btn-group">
+                        <button class="pulse-btn tongue-btn" data-type="1">瘦長</button>
+                        <button class="pulse-btn tongue-btn" data-type="2">正常</button>
+                        <button class="pulse-btn tongue-btn" data-type="3">胖大</button>
+                        <button class="pulse-btn tongue-btn" data-type="0" style="color:#d32f2f;">清除</button>
+                    </div>
+                    <textarea id="tongue_text" class="tongue-input" placeholder="輸入備註 (Enter確認, Shift+Enter換行)"></textarea>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <input type="button" id="image_create" onclick="save();" value="產生圖檔" class="btn-generate">
+                <input type="button" id="image_cancel" value="清除該區域脈圖" class="btn-clear">
+                <input type="button" id="image_clear_all" value="全部清除" class="btn-clear-all">
+            </div>
+        </div>
+    </div>
+
+    <div id="question" style="display:none; cursor: default">
+        <input type="button" id="close" value="Close" />
+        <br>
+        <img id="image" />
+    </div>
+
+    <script>
+        function save() {
+            var canvas = document.getElementById('pulse_canvas');
+            var p = getP();
+            if (p) p.cancelPressed();
+
+            var dataUrl = canvas.toDataURL();
+            var img = document.getElementById('image');
+            img.src = dataUrl;
+
+            $.blockUI({
+                message: $('#question'),
+                css: {
+                    top: '20px',
+                    left: '20px',
+                    width: '800px'
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

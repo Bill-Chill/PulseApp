@@ -181,14 +181,61 @@
             border-radius: 4px;
             font-size: 14px;
             min-width: 150px;
-            height: 32px; 
-            resize: vertical; 
+            height: 34px; 
+            resize: vertical horizontal; 
             font-family: inherit;
             transition: border-color 0.2s;
         }
         .tongue-input:focus {
             border-color: #2196F3;
             outline: none;
+        }
+
+        .color-btn {
+            width: 24px; height: 24px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            margin: 0 3px;
+            appearance: none;
+            -webkit-appearance: none;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .color-btn.active {
+            border: 2px solid #2196F3 !important;
+            transform: scale(1.15);
+            box-shadow: 0 0 5px rgba(33, 150, 243, 0.6);
+        }
+        
+        .color-picker-wrapper {
+            display: inline-block;
+            width: 24px; height: 24px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            margin: 0 3px;
+            overflow: hidden;
+            position: relative;
+            vertical-align: middle;
+            cursor: pointer;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .color-picker-wrapper.active {
+            border: 2px solid #2196F3 !important;
+            transform: scale(1.15);
+            box-shadow: 0 0 5px rgba(33, 150, 243, 0.6);
+        }
+        
+        #paint_custom_color {
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            padding: 0; margin: 0;
+            border: none;
+            cursor: pointer;
+            background: none;
         }
 
     </style>
@@ -324,6 +371,13 @@
                 var key = e.key || (e.originalEvent ? e.originalEvent.key : null);
                 var code = e.which || e.keyCode;
 
+                if ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'Z')) {
+                    e.preventDefault();
+                    var p = getP();
+                    if (p) p.undoLastShape(); 
+                    return;
+                }
+
                 if (key === " " || code === 32) {
                     e.preventDefault(); 
                     var isChecked = $("#batchModeToggle").is(":checked");
@@ -365,6 +419,66 @@
                         p.clearAllPulses();
                         $(".tongue-btn").removeClass("active");
                         $("#tongue_text").val("");
+                    }
+                }
+            });
+
+            $("#paint_tool").change(function() {
+                var p = getP(); if(p) p.setPaintTool(parseInt($(this).val()));
+                if($(this).val() != "0") {
+                    $("#pulse_canvas").css("cursor", "crosshair");
+                } else {
+                    $("#pulse_canvas").css("cursor", "default");
+                }
+            });
+
+            $(".color-btn").click(function() {
+                $(".color-btn").removeClass("active");
+                $(".color-picker-wrapper").removeClass("active");
+
+                $(this).addClass("active");
+
+                var r = $(this).data("r");
+                var g = $(this).data("g");
+                var b = $(this).data("b");
+                var p = getP(); 
+                if(p) p.setPaintColor(r, g, b);
+            });
+
+            $("#paint_custom_color").bind("input change", function() {
+                $(".color-btn").removeClass("active");
+                $(this).parent().addClass("active");
+
+                var hex = $(this).val(); 
+                var r = parseInt(hex.substr(1,2), 16);
+                var g = parseInt(hex.substr(3,2), 16);
+                var b = parseInt(hex.substr(5,2), 16);
+                
+                var p = getP(); 
+                if(p) p.setPaintColor(r, g, b);
+            });
+
+            $("#paint_weight").change(function() {
+                var p = getP(); if(p) p.setPaintWeight(parseFloat($(this).val()));
+            });
+
+            $("#paint_undo").click(function() { var p = getP(); if(p) p.undoLastShape(); });
+            $("#paint_clear").click(function() { 
+                if(confirm("確定清空所有手繪內容？")) { var p = getP(); if(p) p.clearPaint(); } 
+            });
+
+            $("#paint_text_input").keydown(function(e) {
+                if (e.which === 13 && !e.shiftKey) {
+                    e.preventDefault(); 
+                    var txt = $(this).val();
+                    if (txt && txt.trim() !== "") {
+                        var p = getP();
+                        if (p) {
+                            p.addPaintText(txt);
+                            $("#paint_tool").val("0").trigger("change");
+                        }
+                        $(this).val("");
+                        $(this).blur();
                     }
                 }
             });
@@ -430,8 +544,8 @@
                     <div class="section-buttons">
                         <button class="pulse-btn" data-type="61">數脈1</button>
                         <button class="pulse-btn" data-type="64">數脈2</button>
-                        <button class="pulse-btn" data-type="65">數脈3</button>
                         <br>
+                        <button class="pulse-btn" data-type="65">數脈3</button>
                         <button class="pulse-btn" data-type="63">疾脈</button>
                         <br>
                         <button class="pulse-btn" data-type="62">遲脈</button>
@@ -514,6 +628,39 @@
                     </div>
                     <textarea id="tongue_text" class="tongue-input" placeholder="輸入備註 (Enter確認, Shift+Enter換行)"></textarea>
                 </div>
+            </div>
+
+            <div class="control-section" style="padding: 5px; flex-wrap: wrap; align-items: center; background:#f0f4c3;">
+                <span style="font-weight:bold; margin-right:5px;">小畫家：</span>
+                
+                <select id="paint_tool" style="padding:4px; margin-right:5px;">
+                    <option value="0">關閉 (操作脈圖)</option>
+                    <option value="1">畫筆</option>
+                    <option value="2">直線</option>
+                    <option value="3">圓形</option>
+                </select>
+                
+                <button class="color-btn active" data-r="0" data-g="0" data-b="0" style="background-color:black !important;" title="黑"></button>
+                <button class="color-btn" data-r="255" data-g="0" data-b="0" style="background-color:red !important;" title="紅"></button>
+                <button class="color-btn" data-r="255" data-g="255" data-b="255" style="background-color:white !important;" title="白"></button>
+
+                <div class="color-picker-wrapper" title="自訂顏色">
+                    <input type="color" id="paint_custom_color" value="#0000FF">
+                </div>
+                
+                <span style="margin-left:5px;">粗細:</span>
+                <select id="paint_weight" style="padding:4px;">
+                    <option value="1">1px</option>
+                    <option value="2" selected>2px</option>
+                    <option value="3">3px</option>
+                    <option value="5">5px</option>
+                </select>
+
+                <button id="paint_undo" class="pulse-btn" style="padding: 2px 8px; font-size: 14px;">復原</button>
+                <button id="paint_clear" class="pulse-btn" style="padding: 2px 8px; font-size: 14px; color: red;">清空繪圖</button>
+
+                <textarea id="paint_text_input" placeholder="輸入文字 (Enter確認, Shift+Enter換行)" 
+    style="width: 150px; height: 36px; font-size: 14px; padding: 4px; resize: vertical horizontal; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; margin-left: 5px;"></textarea>
             </div>
 
             <div class="action-bar">

@@ -26,6 +26,35 @@ float dragOffsetX = 0;
 float dragOffsetY = 0;
 String currentTongueText = "";
 
+
+int paintTool = 0;
+int paintColor = #000000;
+float paintWeight = 2.0;
+ArrayList drawnShapes = new ArrayList();
+DrawnShape tempShape = null;
+
+void setPaintTool(int t) { paintTool = t; }
+void setPaintColor(int r, int g, int b) { paintColor = color(r, g, b); }
+void setPaintWeight(float w) { paintWeight = w; }
+void addPaintText(String str) {
+  DrawnShape s = new DrawnShape(4, paintColor, 18);
+  
+  s.textVal = str;
+  s.x1 = 100; s.y1 = 245; 
+  drawnShapes.add(s);
+  mouseMoved();
+}
+void undoLastShape() {
+  if (drawnShapes.size() > 0) {
+    drawnShapes.remove(drawnShapes.size() - 1);
+    mouseMoved();
+  }
+}
+void clearPaint() {
+  drawnShapes.clear();
+  mouseMoved();
+}
+
 class PulseArea {
   int x, y, w, h;
   int idx;
@@ -151,6 +180,12 @@ void mouseMoved() {
   
   drawPulse();
   drawTongue();
+
+  for (int i = 0; i < drawnShapes.size(); i++) {
+    DrawnShape s = (DrawnShape)drawnShapes.get(i);
+    s.draw();
+  }
+  if (tempShape != null) tempShape.draw();
 }
 
 boolean isOverText() {
@@ -164,7 +199,28 @@ boolean isOverText() {
   return (mouseX >= textX && mouseX <= textX + tw + 20 && mouseY >= textY && mouseY <= textY + th + 10);
 }
 
-void mousePressed() { 
+DrawnShape draggingShape = null;
+
+void mousePressed() {
+  if (paintTool == 0) {
+      for (int i = drawnShapes.size() - 1; i >= 0; i--) {
+        DrawnShape s = (DrawnShape)drawnShapes.get(i);
+        if (s.isOver(mouseX, mouseY)) {
+          draggingShape = s;
+          dragOffsetX = mouseX - s.x1;
+          dragOffsetY = mouseY - s.y1;
+          return;
+        }
+      }
+  }
+
+  if (paintTool > 0) {
+    tempShape = new DrawnShape(paintTool, paintColor, paintWeight);
+    if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
+    else { tempShape.x1 = mouseX; tempShape.y1 = mouseY; tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
+    return;
+  }
+
   if (isOverText()) {
     draggingText = true;
     dragOffsetX = mouseX - textX;
@@ -173,7 +229,7 @@ void mousePressed() {
   }
 
   noStroke(); 
-  for(int i=0; i<pareaList.size(); i++) {                            
+  for(int i=0; i<pareaList.size(); i++) {
     PulseArea parea = (PulseArea)pareaList.get(i);
     if(mouseX >= parea.x && mouseX <= (parea.x+parea.w) && mouseY >= parea.y && mouseY <= (parea.y+parea.h)) {
       
@@ -201,6 +257,20 @@ void mousePressed() {
 }
 
 void mouseDragged() {
+  if (draggingShape != null) {
+    draggingShape.x1 = mouseX - dragOffsetX;
+    draggingShape.y1 = mouseY - dragOffsetY;
+    mouseMoved();
+    return;
+  }
+  
+  if (tempShape != null) {
+    if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
+    else { tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
+    mouseMoved();
+    return;
+  }
+
   if (draggingText) {
     textX = mouseX - dragOffsetX;
     textY = mouseY - dragOffsetY;
@@ -209,6 +279,12 @@ void mouseDragged() {
 }
 
 void mouseReleased() {
+  if (tempShape != null) {
+    drawnShapes.add(tempShape);
+    tempShape = null;
+    mouseMoved();
+  }
+  draggingShape = null;
   draggingText = false;
 }
 
@@ -546,7 +622,7 @@ void drawPulse() {
         text("☆", x, y);
         noFill();
       } else if(bt.type == 96) {
-        int x = bt.x + 140;
+        int x = bt.x + 170;
         int y = bt.y + 20;
         fill(0);
         textFont(fontArrow);
@@ -783,4 +859,56 @@ String getPulseObj() {
     }
   }
   return str;
+}
+
+class DrawnShape {
+  int type;
+  int c;
+  float w;
+  ArrayList points;
+  float x1, y1, x2, y2;
+  String textVal;
+
+  DrawnShape(int t, int col, float weight) {
+    type = t; c = col; w = weight;
+    points = new ArrayList();
+  }
+
+  void addPoint(float x, float y) {
+    points.add(new PVector(x, y));
+  }
+
+  void draw() {
+    stroke(c);
+    strokeWeight(w);
+    noFill();
+    if (type == 1) {
+      if (points.size() > 1) {
+        beginShape();
+        for (int i = 0; i < points.size(); i++) {
+          PVector p = (PVector)points.get(i);
+          vertex(p.x, p.y);
+        }
+        endShape();
+      }
+    } else if (type == 2) {
+      line(x1, y1, x2, y2);
+    } else if (type == 3) {
+      float r = dist(x1, y1, x2, y2);
+      ellipseMode(CENTER);
+      ellipse(x1, y1, r * 2, r * 2);
+    } else if (type == 4) {
+      fill(c);
+      textFont(fontTongueText);
+      textAlign(LEFT, TOP);
+      text(textVal, x1, y1);
+      noFill();
+    }
+  }
+  
+  boolean isOver(float mx, float my) {
+    if (type != 4) return false;
+    float tw = textWidth(textVal);
+    return (mx >= x1 && mx <= x1 + tw && my >= y1 - 10 && my <= y1 + 10);
+  }
 }

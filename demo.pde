@@ -466,7 +466,6 @@ void drawPulse() {
         int y = ( (idx/3)>=1 ) ? 320-10 : 50-10;   
         int len = 10;
         int w = -20; int w2 = w+len+10; int w3 = w2+len+10;
-        y = bt.y + 25;
         line(x+w, y, x+w+4, y); line(x+w+10, y, x+w+14, y);         
         line(x+w2, y, x+w2+4, y); line(x+w2+10, y, x+w2+14, y);        
         line(x+w3, y, x+w3+len, y);
@@ -508,15 +507,15 @@ void drawPulse() {
       } else if(bt.type == 81) {     
         int x = bt.x;
         int y = bt.y+37; int w = 20;
-        line(x+w, y, x+w-10, y-6); line(x+w, y, x+w+10, y-6);
+        line(x+w, y, x+w-10, y-10); line(x+w, y, x+w+10, y-10);
       } else if(bt.type == 82) {     
         int x = bt.x;
-        int y = bt.y+35; int w = 20;
-        line(x+w-2, y-6, x+w-2, y+3); line(x+w+2, y-6, x+w+2, y+3);
+        int y = bt.y+27; int w = 20;
+        line(x+w-2, y, x+w-2, y+10); line(x+w+2, y, x+w+2, y+10);
       } else if(bt.type == 83) {     
         int x = bt.x;
-        int y = bt.y+37; int w = 20;
-        line(x+w, y, x+w-10, y); line(x+w, y, x+w+10, y);
+        int y = bt.y+27; int w = 20;
+        line(x+w, y, x+w-10, y+10); line(x+w, y, x+w+10, y+10);
       } else if(bt.type == 91) {     
         int idx = (int)(bt.idx/15);
         int x = 10; int x2 = 770; int y = 0;   
@@ -525,6 +524,20 @@ void drawPulse() {
         line(x, y, x+10, y-10); line(x, y, x+10, y+10);        
         line(x2, y, x2-10, y-10);
         line(x2, y, x2-10, y+10);
+      } else if(bt.type == 92) {
+        int row = bt.idx % 5;
+        int fixedY = bt.y + (4.5 - row) * area_height;
+        int cx = bt.x + 87;
+        int cy = fixedY + 17;
+        strokeWeight(3);
+        noFill();
+        ellipse(cx, cy-1.5, 40, 40);
+        fill(0);
+        textFont(fontWu);
+        textAlign(CENTER, CENTER);
+        text("伏", cx, cy-2);
+        textAlign(LEFT, BASELINE);
+        noFill();
       } else if(bt.type == 95) {
         int x = bt.x + 10;
         int y = bt.y + 20;
@@ -539,9 +552,25 @@ void drawPulse() {
         textFont(fontArrow);
         text("↷", x, y);
         noFill();
-      } else if(bt.type == 99) {
+      } else if(bt.type == 54) {
+        int row = bt.idx % 5;
+        int fixedY = bt.y + (2 - row) * area_height;
         int cx = bt.x + 87;
-        int cy = bt.y + 17;
+        int cy = fixedY + 17;
+        strokeWeight(3);
+        noFill();
+        ellipse(cx, cy-1.5, 40, 40);
+        fill(0);
+        textFont(fontWu);
+        textAlign(CENTER, CENTER);
+        text("平", cx, cy-2);
+        textAlign(LEFT, BASELINE);
+        noFill();
+      } else if(bt.type == 55) {
+        int row = bt.idx % 5;
+        int fixedY = bt.y + (2 - row) * area_height;
+        int cx = bt.x + 87;
+        int cy = fixedY + 17;
         strokeWeight(3);
         noFill();
         ellipse(cx, cy-1.5, 40, 40);
@@ -580,12 +609,10 @@ void addPulseType(int ptype) {
   if(blist.size() > 0) { 
     for(int i = blist.size()-1; i >= 0; i--) {   
       BloodType bt = (BloodType)blist.get(i);
-      if(ptype == bt.type) { blist.remove(i); mouseMoved(); return;
-      } 
+      if(ptype == bt.type) { blist.remove(i); mouseMoved(); return;} 
       int p1 = (int)(bt.type/10);
       int p2 = (int)(ptype/10);
-      if(p1 == p2 && ptype < 90) { blist.remove(i); }
-      if ((ptype == 52 && bt.type == 53) || (ptype == 53 && bt.type == 52)) { blist.remove(i); }
+      if(p1 == p2 && ptype < 100) { blist.remove(i); }
     }
   } 
   
@@ -694,6 +721,8 @@ void addPulseTypeGroup(int ptype) {
       } 
       else if(bt.type > 60 && bt.type < 70) { group_slow_fast_size++;
       } 
+      if ((ptype == 52 && bt.type == 53) || (ptype == 53 && bt.type == 52)) { blist.remove(i); }
+      if ((ptype == 54 && bt.type == 55) || (ptype == 55 && bt.type == 54)) { blist.remove(i); }
     }
   }
   if(findId == 0) {

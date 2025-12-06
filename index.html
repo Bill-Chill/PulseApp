@@ -3,6 +3,7 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=1100, user-scalable=yes">
     <script src="processing.js" type="text/javascript"></script>
     <script src="jquery-1.5.2.min.js" type="text/javascript"></script>
     <script src="jquery.blockUI.js" type="text/javascript"></script>
@@ -12,6 +13,7 @@
             font-family: "Microsoft JhengHei", sans-serif;
             background: #f5f5f5;
             margin: 20px;
+            min-width: 1500px;
         }
 
         .main-container {
@@ -289,7 +291,7 @@
                 'z': 31, 'x': 34, 'c': 52, 'v': 53, 
                 'b': 32, 'n': 33, 'm': 51,
                 ',': 38, '.': 36, '/': 95, 'l': 40, ';': 96,
-                'k': 41, 'j': 35, 'h': 37, 'u': 39, 'o': 99,
+                'k': 41, 'j': 35, 'h': 37, 'u': 39, 'i': 55, 'o': 54,
                 '!': 71, '@': 72, '#': 73, '$': 74, '%': 75, '^': 76,
                 'Q': 81, 'W': 82, 'E': 83, 'A': 91, 'S': 92
             };
@@ -494,7 +496,9 @@
                         <button class="pulse-btn" data-type="35">豆脈</button>
                         <button class="pulse-btn" data-type="37">芤脈</button>
                         <button class="pulse-btn" data-type="39">革脈</button>
-                        <button class="pulse-btn" data-type="99" style="color:#d32f2f; border-color:#ffcdd2; background:#ffebee;">無脈</button>
+                        <br>
+                        <button class="pulse-btn" data-type="55">無脈</button>
+                        <button class="pulse-btn" data-type="54">平脈</button>
                     </div>
                 </div>
             </div>
@@ -530,20 +534,30 @@
         function save() {
             var canvas = document.getElementById('pulse_canvas');
             var p = getP();
-            if (p) p.cancelPressed();
+            
+            if (p) {
+                p.cancelPressed();
+		        p.mouseX = 745;
+                p.mouseY = 230;
+                p.mousePressed();
+                p.mouseReleased();
+                p.mouseMoved();
+            }
 
-            var dataUrl = canvas.toDataURL();
-            var img = document.getElementById('image');
-            img.src = dataUrl;
+            setTimeout(function() {
+                var dataUrl = canvas.toDataURL();
+                var img = document.getElementById('image');
+                img.src = dataUrl;
 
-            $.blockUI({
-                message: $('#question'),
-                css: {
-                    top: '20px',
-                    left: '20px',
-                    width: '800px'
-                }
-            });
+                $.blockUI({
+                    message: $('#question'),
+                    css: {
+                        top: '20px',
+                        left: '20px',
+                        width: '800px'
+                    }
+                });
+            }, 50);
         }
     </script>
 </body>

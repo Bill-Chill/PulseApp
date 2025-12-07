@@ -31,6 +31,7 @@
             border: 1px solid #999;
             background: #fff;
             box-shadow: 2px 2px 5px #ccc;
+            touch-action: manipulation;
         }
 
         .controls-area {
@@ -55,7 +56,6 @@
 
         .control-section {
             display: flex;
-            margin-bottom: 12px;
             background: #fcfcfc;
             border: 1px solid #eee;
             border-radius: 4px;
@@ -143,16 +143,14 @@
         .info-icon { display: inline-block; width: 16px; height: 16px; background: #f57f17; color: white; border-radius: 50%; text-align: center; line-height: 16px; font-size: 11px; margin-left: 5px; cursor: pointer; }
 
         .action-bar {
-            margin-top: 15px;
             border-top: 1px solid #eee;
-            padding-top: 15px;
             text-align: right;
         }
 
-        .btn-generate { background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .btn-clear { background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 5px; }
+        .btn-generate { background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 18px; }
+        .btn-clear { background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 18px; margin-left: 5px; }
         .btn-clear.active { background: #d32f2f; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
-        .btn-clear-all { background: #607d8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 5px; }
+        .btn-clear-all { background: #607d8b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 18px; margin-left: 5px; }
 
         .tongue-controls {
             display: flex;
@@ -253,7 +251,10 @@
             $(".pulse-btn").removeClass("waiting");
             $("#image_cancel").removeClass("active");
             pendingBasePulse = 0;
-            $("#batchModeToggle").prop("checked", enabled);
+            var toggle = document.getElementById("batchModeToggle");
+            if (toggle) {
+                toggle.checked = enabled;
+            }
             var p = getP();
             if (p) p.setBatchMode(0);
         }
@@ -294,6 +295,11 @@
 
         function handlePulseClick(type, btnElement) {
             if (isBatchMode) {
+                if ($(btnElement).hasClass("active")) {
+                    $(btnElement).removeClass("active");
+                    applyPulse(0);
+                    return;
+                }
                 $(".pulse-btn").removeClass("active");
                 $(btnElement).addClass("active");
             }
@@ -366,10 +372,25 @@
                 }
             });
 
+            $("#btn_reset_text").click(function() {
+                var p = getP();
+                if (p) p.resetTextPosition();
+            });
+
             $(document).keydown(function(e) {
                 if ($(e.target).is('input, textarea')) return;
                 var key = e.key || (e.originalEvent ? e.originalEvent.key : null);
                 var code = e.which || e.keyCode;
+
+                if (code === 9) {
+                    e.preventDefault();
+                    var $toggle = $("#batchModeToggle");
+                    if ($toggle.length > 0) {
+                        $toggle[0].checked = !$toggle[0].checked; 
+                        $toggle.trigger("change"); // 觸發 change 事件讓 Processing 更新狀態
+                    }
+                    return;
+                }
 
                 if ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'Z')) {
                     e.preventDefault();
@@ -379,9 +400,8 @@
                 }
 
                 if (key === " " || code === 32) {
-                    e.preventDefault(); 
-                    var isChecked = $("#batchModeToggle").is(":checked");
-                    setBatchMode(!isChecked);
+                    e.preventDefault();
+                    save();
                     return;
                 }
 
@@ -482,6 +502,67 @@
                     }
                 }
             });
+
+            var canvas = document.getElementById('pulse_canvas');
+            var lastTapTime = 0;
+            var isDoubleTapDrag = false;
+
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    isDoubleTapDrag = false;
+                    return; 
+                }
+
+                var currentTime = new Date().getTime();
+                var tapLength = currentTime - lastTapTime;
+                
+                if (tapLength < 300 && tapLength > 0) {
+                    isDoubleTapDrag = true;
+                    e.preventDefault();
+                    
+                    var touch = e.touches[0];
+                    var p = getP();
+                    if (p) {
+                        var rect = canvas.getBoundingClientRect();
+                        var scaleX = canvas.width / rect.width;
+                        var scaleY = canvas.height / rect.height;
+                        p.mouseX = (touch.clientX - rect.left) * scaleX;
+                        p.mouseY = (touch.clientY - rect.top) * scaleY;
+                        p.mousePressed(); 
+                    }
+                } else {
+                    isDoubleTapDrag = false;
+                }
+                lastTapTime = currentTime;
+            }, {passive: false});
+
+            canvas.addEventListener('touchmove', function(e) {
+                if (isDoubleTapDrag) {
+                    e.preventDefault();
+                    
+                    var touch = e.touches[0];
+                    var p = getP();
+                    if (p) {
+                        var rect = canvas.getBoundingClientRect();
+                        var scaleX = canvas.width / rect.width;
+                        var scaleY = canvas.height / rect.height;
+                        p.mouseX = (touch.clientX - rect.left) * scaleX;
+                        p.mouseY = (touch.clientY - rect.top) * scaleY;
+                        p.mouseDragged();
+                    }
+                }
+            }, {passive: false});
+
+            canvas.addEventListener('touchend', function(e) {
+                if (isDoubleTapDrag) {
+                    e.preventDefault();
+                    var p = getP();
+                    if (p) {
+                        p.mouseReleased();
+                    }
+                    isDoubleTapDrag = false; 
+                }
+            }, {passive: false});
         });
     </script>
 </head>
@@ -497,7 +578,7 @@
 
             <div class="mode-switch">
                 <div class="mode-header">
-                    <label style="cursor: pointer;">
+                    <label style="cursor: pointer;" title="快速鍵: Tab">
                         <input type="checkbox" id="batchModeToggle"> 啟用「快速填寫模式」
                     </label>
                     <span class="info-icon">?</span>
@@ -627,6 +708,7 @@
                         <button class="pulse-btn tongue-btn" data-type="0" style="color:#d32f2f;">清除</button>
                     </div>
                     <textarea id="tongue_text" class="tongue-input" placeholder="輸入備註 (Enter確認, Shift+Enter換行)"></textarea>
+                    <button id="btn_reset_text" class="d-btn" title="回到預設位置">原位</button>
                 </div>
             </div>
 
@@ -645,8 +727,11 @@
                 <button class="color-btn" data-r="255" data-g="255" data-b="255" style="background-color:white !important;" title="白"></button>
 
                 <div class="color-picker-wrapper" title="自訂顏色">
-                    <input type="color" id="paint_custom_color" value="#0000FF">
+                    <input type="color" id="paint_custom_color" value="#0000FF" list="presetColors">
                 </div>
+
+                <datalist id="presetColors">
+                    <option>#0000FF</option> <option>#008000</option> <option>#FFFF00</option> <option>#800080</option> <option>#FFA500</option> <option>#808080</option> <option>#A52A2A</option> <option>#FFC0CB</option> </datalist>
                 
                 <span style="margin-left:5px;">粗細:</span>
                 <select id="paint_weight" style="padding:4px;">
@@ -656,23 +741,27 @@
                     <option value="5">5px</option>
                 </select>
 
-                <button id="paint_undo" class="pulse-btn" style="padding: 2px 8px; font-size: 14px;">復原</button>
+                <button id="paint_undo" class="pulse-btn" title="快捷鍵: ctrl+z" style="padding: 2px 8px; font-size: 14px;">復原</button>
                 <button id="paint_clear" class="pulse-btn" style="padding: 2px 8px; font-size: 14px; color: red;">清空繪圖</button>
 
-                <textarea id="paint_text_input" placeholder="輸入文字 (Enter確認, Shift+Enter換行)" 
+                <textarea id="paint_text_input" placeholder="輸入文字 (Enter確認, Shift+Enter換行)"
     style="width: 150px; height: 36px; font-size: 14px; padding: 4px; resize: vertical horizontal; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; margin-left: 5px;"></textarea>
+                
+                <div style="position: absolute; bottom: 2px; right: 5px; font-size: 14px; color: #666;">
+                    *文字可拖曳 (觸控請雙擊)
+                </div>
             </div>
 
             <div class="action-bar">
-                <input type="button" id="image_create" onclick="save();" value="產生圖檔" class="btn-generate">
+                <input type="button" id="image_create" title="快捷鍵: Space" onclick="save();" value="產生圖檔" class="btn-generate">
                 <input type="button" id="image_cancel" value="清除該區域脈圖" class="btn-clear">
                 <input type="button" id="image_clear_all" value="全部清除" class="btn-clear-all">
             </div>
         </div>
     </div>
 
-    <div id="question" style="display:none; cursor: default">
-        <input type="button" id="close" value="Close" />
+    <div id="question" style="display:none; cursor: default; position: relative;">
+        <input type="button" id="close" value="關閉" style="position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%); font-size: 18px; padding-left: 30px; padding-right: 30px;" />
         <br>
         <img id="image" />
     </div>

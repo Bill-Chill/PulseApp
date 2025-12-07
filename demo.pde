@@ -1,14 +1,14 @@
 int[] pulse1 = {50, 50};
 int[] pulse2 = {50, 320};
-int area_width = 170;  
-int area_height = 35; 
+int area_width = 170;
+int area_height = 35;
 int area_space = 250;
-int gWidth = 780; 
+int gWidth = 780;
 int gHeight = 550;
 
-int batchPulseType = 0; 
+int batchPulseType = 0;
 
-ArrayList pareaList;  
+ArrayList pareaList;
 ArrayList bloodList;
 int areaSelectIdx = -1;
 int pulseNumber = 30;
@@ -16,11 +16,11 @@ int pulseNumber = 30;
 PFont fontStar;
 PFont fontArrow;
 PFont fontWu;
-PFont fontTongueText; 
+PFont fontTongueText;
 
-int currentTongueType = 0; 
-float textX = 580; 
-float textY = 245; 
+int currentTongueType = 0;
+float textX = 580;
+float textY = 245;
 boolean draggingText = false;
 float dragOffsetX = 0;
 float dragOffsetY = 0;
@@ -40,7 +40,7 @@ void addPaintText(String str) {
   DrawnShape s = new DrawnShape(4, paintColor, 18);
   
   s.textVal = str;
-  s.x1 = 100; s.y1 = 245; 
+  s.x1 = 100; s.y1 = 245;
   drawnShapes.add(s);
   mouseMoved();
 }
@@ -65,7 +65,7 @@ class BloodType {
   int idx;
   int type; 
   int group_size;
-  int width_type; 
+  int width_type;
 }
 
 void setup() {
@@ -73,7 +73,7 @@ void setup() {
   pareaList = new ArrayList();
   bloodList = new ArrayList();
   for(int i=0; i<pulseNumber; i++) {
-    bloodList.add(new ArrayList());              
+    bloodList.add(new ArrayList());
   }
    
   strokeWeight(10);
@@ -88,10 +88,10 @@ void setup() {
 
 void setBatchMode(int type) {
   batchPulseType = type;
-  if (batchPulseType != 0) {
-    areaSelectIdx = -1;
-    mouseMoved();
-  }
+
+  areaSelectIdx = -1;
+  mouseMoved();
+
 }
 
 void setTongueType(int type) {
@@ -109,31 +109,31 @@ void draw() {
 
 void initPulseArea() { 
   for(int i=0; i<6; i++) {
-    for(int j=0; j<5; j++) {            
+    for(int j=0; j<5; j++) {
       PulseArea parea = new PulseArea();
       int idx = i*5+j;
       int x_plus = 0; 
       int y_plus = 0;
-      if(i<3) {             
+      if(i<3) {
         x_plus = pulse1[0] + (area_space*(i%3));
         y_plus = pulse1[1] + (area_height*j) + 2; 
       } else {    
         x_plus = pulse2[0] + (area_space*(i%3));
         y_plus = pulse2[1] + (area_height*j) + 2; 
       }
-      parea.x = x_plus;    
+      parea.x = x_plus;
       parea.y = y_plus;
       parea.w = area_width;
-      parea.h = 30;   
+      parea.h = 30;
       parea.idx = idx;
       pareaList.add(parea);
     }
   } 
 }
 
-void bgDraw() {   
-  fill(255, 255, 255); 
-  rect(0, 0, gWidth, gHeight); 
+void bgDraw() {
+  fill(255, 255, 255);
+  rect(0, 0, gWidth, gHeight);
   
   background(255);
   stroke(74, 165, 255);
@@ -148,22 +148,22 @@ void bgDraw() {
   for(int j=0; j<3; j++) {
     for(int i=0; i<6; i++) {
       line(pulse2[0]+(area_space*j), pulse2[1]+(area_height*i), pulse2[0]+area_width+(area_space*j), pulse2[1]+(area_height*i));
-    } 
-  } 
+    }
+  }
   drawPulse();
 }
 
-void mouseMoved() {   
+void mouseMoved() {
   noStroke();
   bgDraw();
   
   if (!draggingText) {
-      for(int i=0; i<pareaList.size(); i++) {                            
+      for(int i=0; i<pareaList.size(); i++) {
         PulseArea parea = (PulseArea)pareaList.get(i);
-        if(areaSelectIdx == parea.idx) {                       
+        if(areaSelectIdx == parea.idx) {
           fill(255, 255, 0);
           rect(parea.x, parea.y, parea.w, parea.h);
-        } else {  
+        } else {
           if(mouseX >= parea.x && mouseX <= (parea.x+parea.w) && mouseY >= parea.y && mouseY <= (parea.y+parea.h)) { 
             if(batchPulseType > 0) {
                fill(200, 255, 200, 150);
@@ -173,8 +173,8 @@ void mouseMoved() {
                fill(255, 255, 149, 100);
             }
             rect(parea.x, parea.y, parea.w, parea.h);
-          }                
-        } 
+          }
+        }
       }
   }
   
@@ -196,7 +196,14 @@ boolean isOverText() {
   String[] lines = split(currentTongueText, "\n");
   float th = lines.length * 16; 
   
-  return (mouseX >= textX && mouseX <= textX + tw + 20 && mouseY >= textY && mouseY <= textY + th + 10);
+  return (mouseX >= textX && mouseX <= textX + tw + 20 &&
+          mouseY >= textY && mouseY <= textY + th + 10);
+}
+
+void resetTextPosition() {
+  textX = 580;
+  textY = 245;
+  mouseMoved();
 }
 
 DrawnShape draggingShape = null;
@@ -337,16 +344,6 @@ void drawTongue() {
     textAlign(LEFT, TOP); 
     text(currentTongueText, textX, textY); 
     noFill();
-    
-    if (draggingText) {
-       noFill();
-       stroke(200);
-       strokeWeight(1);
-       float tw = textWidth(currentTongueText);
-       String[] lines = split(currentTongueText, "\n");
-       float th = lines.length * 16;
-       rect(textX, textY, tw, th);
-    }
   }
 }
 
@@ -908,7 +905,15 @@ class DrawnShape {
   
   boolean isOver(float mx, float my) {
     if (type != 4) return false;
+
+    textFont(fontTongueText);
     float tw = textWidth(textVal);
-    return (mx >= x1 && mx <= x1 + tw && my >= y1 - 10 && my <= y1 + 10);
+    
+    String[] lines = split(textVal, "\n");
+    float lineHeight = 20;
+    float th = lines.length * lineHeight; 
+    
+    return (mx >= x1 && mx <= x1 + tw + 20 && 
+            my >= y1 && my <= y1 + th + 10);
   }
 }

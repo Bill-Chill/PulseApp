@@ -294,7 +294,12 @@
             }
         }
 
-        function handlePulseClick(type, btnElement) {
+        function handlePulseClick(type, btnElement, e) {
+            if (type == 19 && e && e.shiftKey) {
+                $("#half_weak_menu").fadeIn(200);
+                return;
+            }
+            
             if (isBatchMode) {
                 if ($(btnElement).hasClass("active")) {
                     $(btnElement).removeClass("active");
@@ -338,6 +343,36 @@
         }
 
         $(document).ready(function() {
+
+            $("#hw_ratio").bind('input change', function() {
+                $("#hw_ratio_val").text($(this).val());
+            });
+
+            $("#hw_cancel").click(function() {
+                $("#half_weak_menu").fadeOut(200);
+            });
+
+            $("#hw_confirm").click(function() {
+                var ratio = parseInt($("#hw_ratio").val());
+                var isRight = $("#hw_is_right").is(":checked");
+                var p = getP();
+                
+                if (p) {
+                    p.setHalfWeakParams(ratio, isRight);
+                    applyPulse(19);
+                    var btn = $('.pulse-btn[data-type="19"]');
+                    if (isBatchMode) {
+                        $(".pulse-btn").removeClass("active");
+                        btn.addClass("active");
+                    } else {
+                        btn.css("background-color", "#ffffcc");
+                        setTimeout(function(){ btn.css("background-color", ""); }, 150);
+                    }
+                }
+                
+                $("#half_weak_menu").fadeOut(200);
+            });
+
             var keyMap = {
                 '1': 11, '2': 19, '3': 12, '4': 13, '5': 14, '6': 15, '7': 16, '8': 17, '9': 18,
                 'q': 21, 'w': 22, 'e': 23, 'r': 24, 't': 25,
@@ -350,11 +385,28 @@
                 'Q': 81, 'W': 82, 'E': 83, 'A': 91, 'S': 92
             };
 
+            var lastType19TouchTime = 0;
+
             $(".pulse-btn").each(function() {
                 var type = $(this).data("type");
                 var keyChar = Object.keys(keyMap).find(key => keyMap[key] === type);
-                if(keyChar) $(this).attr('title', '快捷鍵: ' + keyChar);
-                $(this).click(function() { handlePulseClick(type, this); });
+                var titleText = "";
+                if(keyChar) titleText = '快捷鍵: ' + keyChar;
+                if (type == 19) {
+                    titleText += "\n(Shift+左鍵 或 觸控雙擊：詳細設定)";
+                    $(this).bind('touchend', function(e) {
+                        var currentTime = new Date().getTime();
+                        var tapLength = currentTime - lastType19TouchTime;
+                        if (tapLength < 300 && tapLength > 0) {
+                            $("#half_weak_menu").fadeIn(200);
+                            e.preventDefault(); 
+                            return false;
+                        }
+                        lastType19TouchTime = currentTime;
+                    });
+                }
+                if(titleText) $(this).attr('title', titleText);
+                $(this).click(function(e) { handlePulseClick(type, this, e); });
             });
 
             $(".section-sidebar").click(function() { handleSidebarClick(this); });
@@ -388,7 +440,7 @@
                     var $toggle = $("#batchModeToggle");
                     if ($toggle.length > 0) {
                         $toggle[0].checked = !$toggle[0].checked; 
-                        $toggle.trigger("change"); // 觸發 change 事件讓 Processing 更新狀態
+                        $toggle.trigger("change");
                     }
                     return;
                 }
@@ -409,7 +461,7 @@
                 if (key && keyMap[key]) {
                     var type = keyMap[key];
                     var btn = $('.pulse-btn[data-type="' + type + '"]');
-                    if(btn.length) handlePulseClick(type, btn);
+                    if(btn.length) handlePulseClick(type, btn, e);
                 }
             });
 
@@ -573,6 +625,30 @@
     <div class="main-container">
         <div class="canvas-area">
             <canvas width="780" height="550" id="pulse_canvas" data-processing-sources="demo.pde"></canvas>
+        </div>
+        
+        <div id="half_weak_menu" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border:2px solid #2196F3; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:1000; width:300px;">
+            <h3 style="margin-top:0; color:#333;">半弱脈設定</h3>
+            
+            <div style="margin-bottom:15px;">
+                <label>弱脈佔比: <span id="hw_ratio_val">50</span>%</label>
+                <input type="range" id="hw_ratio" min="10" max="90" step="10" value="50" style="width:100%;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#666;">
+                    <span>少</span><span>多</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="cursor:pointer; display:flex; align-items:center;">
+                    <input type="checkbox" id="hw_is_right" style="width:18px; height:18px; margin-right:8px;">
+                    弱脈在右側 (預設為左側)
+                </label>
+            </div>
+
+            <div style="text-align:right;">
+                <button id="hw_cancel" style="padding:6px 12px; background:#ccc; border:none; border-radius:4px; cursor:pointer; margin-right:10px;">取消</button>
+                <button id="hw_confirm" style="padding:6px 20px; background:#2196F3; color:white; border:none; border-radius:4px; cursor:pointer;">確定</button>
+            </div>
         </div>
 
         <div class="controls-area">
@@ -798,6 +874,4 @@
         }
     </script>
 </body>
-
-
 </html>

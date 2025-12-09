@@ -643,7 +643,7 @@ void drawPulse() {
         noFill();
       } else if(bt.type == 95) {
         int x = bt.x + 10;
-        int y = bt.y + 20;
+        int y = bt.y + 22;
         fill(0);
         textFont(fontStar);
         text("☆", x, y);

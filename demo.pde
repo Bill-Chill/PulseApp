@@ -34,7 +34,7 @@ ArrayList drawnShapes = new ArrayList();
 DrawnShape tempShape = null;
 
 void setPaintTool(int t) { paintTool = t; }
-void setPaintColor(int r, int g, int b) { paintColor = color(r, g, b); }
+void setPaintColor(int r, int g, int b) { paintColor = color(r, g, b, 255); }
 void setPaintWeight(float w) { paintWeight = w; }
 void addPaintText(String str) {
   DrawnShape s = new DrawnShape(4, paintColor, 18);
@@ -66,6 +66,17 @@ class BloodType {
   int type; 
   int group_size;
   int width_type;
+
+  int weak_percent = 50;
+  boolean weak_is_right = false;
+}
+
+int tempWeakPercent = 50;
+boolean tempWeakIsRight = false;
+
+void setHalfWeakParams(int percent, boolean isRight) {
+  tempWeakPercent = percent;
+  tempWeakIsRight = isRight;
 }
 
 void setup() {
@@ -384,24 +395,43 @@ void drawPulse() {
       else if(bt.type == 19) {
         int y = bt.y+15;
         int x = bt.x+22; 
+        int totalWidth = 120;
+        
+        int weakWidth = (int)(totalWidth * (bt.weak_percent / 100.0));
+        int solidWidth = totalWidth - weakWidth;
+        int weakCount = max(1, weakWidth / 10); 
+
         if (bt.width_type > 0) {
            int y2 = 0;
            if(bt.width_type < 16) { 
-               y = bt.y+9; 
+               y = bt.y+9;
                y2 = y + (bt.width_type - 12)*3; 
            } else { 
                y = bt.y+5;
                y2 = y + (bt.width_type - 12)*3 + 5; 
            }
            
-           drawWeakPulseLine(x, y, 6);
-           line(x+60, y, x+120, y);
-           
-           drawWeakPulseLine(x, y2, 6);
-           line(x+60, y2, x+120, y2);
+           if (!bt.weak_is_right) {
+               drawWeakPulseLine(x, y, weakCount);
+               line(x + weakWidth, y, x + totalWidth, y);
+               
+               drawWeakPulseLine(x, y2, weakCount);
+               line(x + weakWidth, y2, x + totalWidth, y2);
+           } else {
+               line(x, y, x + solidWidth, y);
+               drawWeakPulseLine(x + solidWidth, y, weakCount);
+               
+               line(x, y2, x + solidWidth, y2);
+               drawWeakPulseLine(x + solidWidth, y2, weakCount);
+           }
         } else {
-           drawWeakPulseLine(x, y, 6);
-           line(x+60, y, x+120, y);
+           if (!bt.weak_is_right) {
+               drawWeakPulseLine(x, y, weakCount);
+               line(x + weakWidth, y, x + totalWidth, y);
+           } else {
+               line(x, y, x + solidWidth, y);
+               drawWeakPulseLine(x + solidWidth, y, weakCount);
+           }
         }
       }
       else if(bt.type >= 13 && bt.type <= 17) {     
@@ -696,7 +726,11 @@ void addPulseType(int ptype) {
         bt.x = parea.x; bt.y = parea.y; bt.h = parea.h; bt.w = parea.w; bt.idx = parea.idx;
         bt.type = ptype;
         bt.group_size = 0;
-        bt.width_type = 0; 
+        bt.width_type = 0;
+        if (ptype == 19) {
+            bt.weak_percent = tempWeakPercent;
+            bt.weak_is_right = tempWeakIsRight;
+        }
         blist.add(bt);
     }
   }
@@ -707,9 +741,16 @@ void addPulseWithWidth(int ptype, int wtype) {
   if(areaSelectIdx == -1) return;
   ArrayList blist = (ArrayList)bloodList.get(areaSelectIdx);
   
+  int inheritedPercent = 50;
+  boolean inheritedIsRight = false;
+
   if(blist.size() > 0) { 
     for(int i = blist.size()-1; i >= 0; i--) {   
       BloodType bt = (BloodType)blist.get(i);
+      if (bt.type == 19) {
+          inheritedPercent = bt.weak_percent;
+          inheritedIsRight = bt.weak_is_right;
+      }
       if (bt.type == ptype) { blist.remove(i); }
       else if ((int)(bt.type/10) == 1) { blist.remove(i); }
     }
@@ -723,6 +764,10 @@ void addPulseWithWidth(int ptype, int wtype) {
         bt.type = ptype; 
         bt.width_type = wtype; 
         bt.group_size = 0;
+        if (ptype == 19) {
+            bt.weak_percent = inheritedPercent;
+            bt.weak_is_right = inheritedIsRight;
+        }
         blist.add(bt);
     }
   }

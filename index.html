@@ -294,12 +294,7 @@
             }
         }
 
-        function handlePulseClick(type, btnElement, e) {
-            if (type == 19 && e && e.shiftKey) {
-                $("#half_weak_menu").fadeIn(200);
-                return;
-            }
-            
+        function handlePulseClick(type, btnElement, e) {            
             if (isBatchMode) {
                 if ($(btnElement).hasClass("active")) {
                     $(btnElement).removeClass("active");
@@ -385,28 +380,46 @@
                 'Q': 81, 'W': 82, 'E': 83, 'A': 91, 'S': 92
             };
 
-            var lastType19TouchTime = 0;
-
+            var btnPressTimer;
+            var btnIsLongPress = false;
+            
             $(".pulse-btn").each(function() {
                 var type = $(this).data("type");
-                var keyChar = Object.keys(keyMap).find(key => keyMap[key] === type);
+                var keyChar = Object.keys(keyMap).find(function(key){ return keyMap[key] === type; });
                 var titleText = "";
+                
                 if(keyChar) titleText = '快捷鍵: ' + keyChar;
+
                 if (type == 19) {
-                    titleText += "\n(Shift+左鍵 或 觸控雙擊：詳細設定)";
-                    $(this).bind('touchend', function(e) {
-                        var currentTime = new Date().getTime();
-                        var tapLength = currentTime - lastType19TouchTime;
-                        if (tapLength < 300 && tapLength > 0) {
+                    titleText += "\n(長按：詳細設定)";
+
+                    $(this).bind('mousedown touchstart', function(e) {
+                        btnIsLongPress = false;
+                        btnPressTimer = setTimeout(function() {
+                            btnIsLongPress = true;
                             $("#half_weak_menu").fadeIn(200);
-                            e.preventDefault(); 
-                            return false;
-                        }
-                        lastType19TouchTime = currentTime;
+                        }, 350);
                     });
+
+                    $(this).bind('mouseup touchend mouseleave', function(e) {
+                        clearTimeout(btnPressTimer);
+                    });
+
+                    $(this).click(function(e) {
+                        if (btnIsLongPress) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            btnIsLongPress = false;
+                            return;
+                        }
+                        handlePulseClick(type, this, e);
+                    });
+
+                } else {
+                    $(this).click(function(e) { handlePulseClick(type, this, e); });
                 }
+
                 if(titleText) $(this).attr('title', titleText);
-                $(this).click(function(e) { handlePulseClick(type, this, e); });
             });
 
             $(".section-sidebar").click(function() { handleSidebarClick(this); });
@@ -557,22 +570,38 @@
             });
 
             var canvas = document.getElementById('pulse_canvas');
-            var lastTapTime = 0;
-            var isDoubleTapDrag = false;
+            var paintPressTimer;
+            var isPaintLongPress = false;
+            var lastTwoFingerTapTime = 0;
 
             canvas.addEventListener('touchstart', function(e) {
-                if (e.touches.length > 1) {
-                    isDoubleTapDrag = false;
-                    return; 
+                if (e.touches.length == 2) {
+                    var currentTime = new Date().getTime();
+                    var tapLength = currentTime - lastTwoFingerTapTime;
+
+                    if (tapLength < 300 && tapLength > 0) {
+                        e.preventDefault();
+                        
+                        var p = getP();
+                        if (p) {
+                            p.undoLastShape();
+                            $("#paint_undo").css("background-color", "#ffffcc");
+                            setTimeout(function(){ $("#paint_undo").css("background-color", ""); }, 150);
+                        }
+                        lastTwoFingerTapTime = 0;
+                    } else {
+                        lastTwoFingerTapTime = currentTime;
+                    }
+                    return;
                 }
 
-                var currentTime = new Date().getTime();
-                var tapLength = currentTime - lastTapTime;
-                
-                if (tapLength < 300 && tapLength > 0) {
-                    isDoubleTapDrag = true;
-                    e.preventDefault();
-                    
+                if (e.touches.length > 2) return;
+
+                isPaintLongPress = false;
+
+                paintPressTimer = setTimeout(function() {
+                    isPaintLongPress = true;
+
                     var touch = e.touches[0];
                     var p = getP();
                     if (p) {
@@ -583,14 +612,12 @@
                         p.mouseY = (touch.clientY - rect.top) * scaleY;
                         p.mousePressed(); 
                     }
-                } else {
-                    isDoubleTapDrag = false;
-                }
-                lastTapTime = currentTime;
+                }, 350);
+                
             }, {passive: false});
 
             canvas.addEventListener('touchmove', function(e) {
-                if (isDoubleTapDrag) {
+                if (isPaintLongPress) {
                     e.preventDefault();
                     
                     var touch = e.touches[0];
@@ -603,17 +630,21 @@
                         p.mouseY = (touch.clientY - rect.top) * scaleY;
                         p.mouseDragged();
                     }
+                } else {
+                    clearTimeout(paintPressTimer);
                 }
             }, {passive: false});
 
             canvas.addEventListener('touchend', function(e) {
-                if (isDoubleTapDrag) {
+                clearTimeout(paintPressTimer);
+                
+                if (isPaintLongPress) {
                     e.preventDefault();
                     var p = getP();
                     if (p) {
                         p.mouseReleased();
                     }
-                    isDoubleTapDrag = false; 
+                    isPaintLongPress = false; 
                 }
             }, {passive: false});
         });
@@ -824,8 +855,8 @@
                 <textarea id="paint_text_input" placeholder="輸入文字 (Enter確認, Shift+Enter換行)"
     style="width: 150px; height: 36px; font-size: 14px; padding: 4px; resize: vertical horizontal; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; margin-left: 5px;"></textarea>
                 
-                <div style="position: absolute; bottom: 2px; right: 5px; font-size: 14px; color: #666;">
-                    *文字可拖曳 (觸控請雙擊)
+                <div style="position: absolute; bottom: 2px; right: 5px; font-size: 14px; color: #666; text-align: right;">
+                    * 文字皆可拖曳<br>[觸控]長按：半弱脈設定 / 繪圖 / 拖曳 &nbsp;&nbsp; 雙指雙擊：復原
                 </div>
             </div>
 

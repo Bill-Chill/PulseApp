@@ -329,14 +329,20 @@ void drawWeakPulseLine(int x, int y, int count) {
   }
 }
 
+int custom_w1 = 20;
+int custom_cw = 53;
+int custom_h = 73;
+
+void setCustomTongueParams(int w1, int cw, int h) {
+  custom_w1 = w1;
+  custom_cw = cw;
+  custom_h = h;
+  mouseMoved();
+}
+
 void drawTongue() {
   int tx = 740; 
   int ty = 245; 
-  int w = 40; 
-  
-  if (currentTongueType == 1) w = 30;
-  else if (currentTongueType == 2) w = 40;
-  else if (currentTongueType == 3) w = 50;
   
   if (currentTongueType > 0) {
     noFill();
@@ -344,8 +350,24 @@ void drawTongue() {
     strokeWeight(3);
     
     beginShape();
-    vertex(tx - w*2/3, ty);
-    bezierVertex(tx - w*2/3, ty + 70, tx + w*2/3, ty + 70, tx + w*2/3, ty);
+    
+    if (currentTongueType == 1) {
+       vertex(tx - 20, ty);
+       bezierVertex(tx - 15, ty + 75, tx + 15, ty + 75, tx + 20, ty);
+    } 
+    else if (currentTongueType == 2) {
+       vertex(tx - 20, ty);
+       bezierVertex(tx - 27, ty + 65, tx + 27, ty + 65, tx + 20, ty);
+    } 
+    else if (currentTongueType == 3) {
+       vertex(tx - 20, ty);
+       bezierVertex(tx - 38, ty + 70, tx + 38, ty + 70, tx + 20, ty);
+    }
+    else if (currentTongueType == 4) {
+       vertex(tx - custom_w1, ty);
+       bezierVertex(tx - custom_cw, ty + custom_h, tx + custom_cw, ty + custom_h, tx + custom_w1, ty);
+    }
+
     endShape();
   }
   

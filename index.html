@@ -42,6 +42,7 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: relative;
         }
 
         .flex-row {
@@ -100,7 +101,7 @@
 
         .pulse-btn {
             display: inline-block;
-            margin: 3px;
+            margin: 2px;
             padding: 2px 3px;
             border: 1px solid #000000;
             background: #fff;
@@ -426,6 +427,14 @@
             
             $(".tongue-btn").click(function() {
                 var type = $(this).data("type");
+                
+                if (type == 4) {
+                    $("#custom_tongue_menu").fadeIn(200);
+                    $("#ct_w1").trigger("change");
+                } else {
+                    $("#custom_tongue_menu").fadeOut(200);
+                }
+                
                 handleTongueClick(type, this);
             });
             
@@ -476,6 +485,23 @@
                     var btn = $('.pulse-btn[data-type="' + type + '"]');
                     if(btn.length) handlePulseClick(type, btn, e);
                 }
+            });
+
+            $("#ct_w1, #ct_cw, #ct_h").bind("input change", function() {
+                var w1 = parseInt($("#ct_w1").val());
+                var cw = parseInt($("#ct_cw").val());
+                var h = parseInt($("#ct_h").val());
+                
+                $("#ct_w1_val").text(w1);
+                $("#ct_cw_val").text(cw);
+                $("#ct_h_val").text(h);
+                
+                var p = getP();
+                if(p) p.setCustomTongueParams(w1, cw, h);
+            });
+
+            $("#ct_close").click(function() {
+                $("#custom_tongue_menu").fadeOut(200);
             });
 
             $("#batchModeToggle").change(function() { setBatchMode($(this).is(":checked")); });
@@ -658,7 +684,9 @@
             <canvas width="780" height="550" id="pulse_canvas" data-processing-sources="demo.pde"></canvas>
         </div>
         
-        <div id="half_weak_menu" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border:2px solid #2196F3; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:1000; width:300px;">
+        <div class="controls-area">
+
+            <div id="half_weak_menu" style="display:none; position:absolute; top: 5px; right: 5px; background:white; padding:20px; border:2px solid #2196F3; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:2000; width:300px;">
             <h3 style="margin-top:0; color:#333;">半弱脈設定</h3>
             
             <div style="margin-bottom:15px;">
@@ -682,7 +710,34 @@
             </div>
         </div>
 
-        <div class="controls-area">
+        <div id="custom_tongue_menu" style="display:none; position:absolute; top: 5px; right: 5px; background:rgb(255, 255, 255); padding:20px; border:2px solid #FF9800; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:2000; width:300px;">
+            <h3 style="margin-top:0; color:#333;">自訂舌象參數</h3>
+            
+            <div style="margin-bottom:10px;">
+                <label>上方寬度 (Vertex): <span id="ct_w1_val">20</span></label>
+                <input type="range" id="ct_w1" min="10" max="40" value="20" style="width:100%;">
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label>下方寬度 (Bezier): <span id="ct_cw_val">55</span></label>
+                <input type="range" id="ct_cw" min="15" max="80" value="53" style="width:100%;">
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label>長度 (Height): <span id="ct_h_val">80</span></label>
+                <input type="range" id="ct_h" min="50" max="100" value="73" style="width:100%;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div style="font-size:12px; color:#888; line-height: 1.4;">
+                    上方寬度/下方寬度/長度<br>
+                    瘦長：20/15/75<br>
+                    正常：20/27/65<br>
+                    胖嫩：20/38/70
+                </div>
+                <button id="ct_close" style="padding:6px 20px; background:#FF9800; color:white; border:none; border-radius:4px; cursor:pointer;">完成</button>
+            </div>
+        </div>
 
             <div class="mode-switch">
                 <div class="mode-header">
@@ -812,11 +867,12 @@
                     <div class="tongue-btn-group">
                         <button class="pulse-btn tongue-btn" data-type="1">瘦長</button>
                         <button class="pulse-btn tongue-btn" data-type="2">正常</button>
-                        <button class="pulse-btn tongue-btn" data-type="3">胖大</button>
+                        <button class="pulse-btn tongue-btn" data-type="3">胖嫩</button>
+                        <button class="pulse-btn tongue-btn" data-type="4" style="color:#0400ff;">自訂</button>
                         <button class="pulse-btn tongue-btn" data-type="0" style="color:#d32f2f;">清除</button>
                     </div>
                     <textarea id="tongue_text" class="tongue-input" placeholder="輸入備註 (Enter確認, Shift+Enter換行)"></textarea>
-                    <button id="btn_reset_text" class="d-btn" title="回到預設位置">原位</button>
+                    <button id="btn_reset_text" class="d-btn" title="文字回到預設位置">原位</button>
                 </div>
             </div>
 

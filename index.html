@@ -295,7 +295,7 @@
             }
         }
 
-        function handlePulseClick(type, btnElement, e) {            
+        function handlePulseClick(type, btnElement, e) {
             if (isBatchMode) {
                 if ($(btnElement).hasClass("active")) {
                     $(btnElement).removeClass("active");
@@ -472,6 +472,40 @@
                     }
                 }
 
+                if (key === '`' && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+                    e.preventDefault();
+
+                    var $btns = $(".color-btn");
+                    var $customInput = $("#paint_custom_color");
+                    var $customWrapper = $customInput.parent();
+
+                    if ($btns.eq(0).hasClass("active")) {
+                        $btns.eq(1).click();
+                    } 
+                    else if ($btns.eq(1).hasClass("active")) {
+                        $btns.eq(2).click();
+                    } 
+                    else if ($btns.eq(2).hasClass("active")) {
+                        $btns.removeClass("active");
+                        $customWrapper.addClass("active");
+                        
+                        var hex = $customInput.val();
+                        var r = parseInt(hex.substr(1,2), 16);
+                        var g = parseInt(hex.substr(3,2), 16);
+                        var b = parseInt(hex.substr(5,2), 16);
+                        
+                        var p = getP(); 
+                        if(p) p.setPaintColor(r, g, b);
+                    } 
+                    else if ($customWrapper.hasClass("active")) {
+                        $btns.eq(0).click();
+                    } 
+                    else {
+                        $btns.eq(0).click();
+                    }
+                    return;
+                }
+
                 if (key === "Delete" || code === 46) {
                     e.preventDefault();
                     $("#image_cancel").click();
@@ -585,8 +619,9 @@
                 if(p) p.setPaintColor(r, g, b);
             });
 
-            $("#paint_custom_color").bind("input change", function() {
+            $("#paint_custom_color").bind("click input change", function() {
                 $(".color-btn").removeClass("active");
+                $(".color-picker-wrapper").removeClass("active");
                 $(this).parent().addClass("active");
 
                 var hex = $(this).val(); 

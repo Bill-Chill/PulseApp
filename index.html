@@ -473,6 +473,12 @@
                     }
                 }
 
+                if (key === "Delete" || code === 46) {
+                    e.preventDefault();
+                    $("#image_cancel").click();
+                    return;
+                }
+
                 if (code === 9) {
                     e.preventDefault();
                     var $toggle = $("#batchModeToggle");
@@ -541,10 +547,11 @@
             });
             
             $("#image_clear_all").click(function() {
-                if(confirm("確定要清除所有脈象嗎？")) {
+                if(confirm("確定要清除所有脈象及繪圖內容嗎？")) {
                     var p = getP();
                     if (p) {
                         p.clearAllPulses();
+                        p.clearPaint();
                         $(".tongue-btn").removeClass("active");
                         $("#tongue_text").val("");
                     }
@@ -934,7 +941,7 @@
 
             <div class="action-bar">
                 <input type="button" id="image_create" title="快捷鍵: Space" onclick="save();" value="產生圖檔" class="btn-generate">
-                <input type="button" id="image_cancel" value="清除該區域脈圖" class="btn-clear">
+                <input type="button" id="image_cancel" value="清除該區域脈圖" class="btn-clear" title="快捷鍵: Del">
                 <input type="button" id="image_clear_all" value="全部清除" class="btn-clear-all">
             </div>
         </div>

@@ -457,6 +457,22 @@
                 var key = e.key || (e.originalEvent ? e.originalEvent.key : null);
                 var code = e.which || e.keyCode;
 
+                if (e.altKey) {
+                    if (key === '1') {
+                        $("#paint_tool").val("1").trigger("change"); // 畫筆
+                        return;
+                    } else if (key === '2') {
+                        $("#paint_tool").val("2").trigger("change"); // 直線
+                        return;
+                    } else if (key === '3') {
+                        $("#paint_tool").val("3").trigger("change"); // 圓形
+                        return;
+                    } else if (key === '`') {
+                        $("#paint_tool").val("0").trigger("change"); // 關閉
+                        return;
+                    }
+                }
+
                 if (code === 9) {
                     e.preventDefault();
                     var $toggle = $("#batchModeToggle");
@@ -880,10 +896,10 @@
                 <span style="font-weight:bold; margin-right:5px;">小畫家：</span>
                 
                 <select id="paint_tool" style="padding:4px; margin-right:5px;">
-                    <option value="0">關閉 (操作脈圖)</option>
-                    <option value="1">畫筆</option>
-                    <option value="2">直線</option>
-                    <option value="3">圓形</option>
+                    <option value="0">關閉 (快捷鍵: Alt+`)</option>
+                    <option value="1">畫筆 (快捷鍵: Alt+1)</option>
+                    <option value="2">直線 (快捷鍵: Alt+2)</option>
+                    <option value="3">圓形 (快捷鍵: Alt+3)</option>
                 </select>
                 
                 <button class="color-btn active" data-r="0" data-g="0" data-b="0" style="background-color:black !important;" title="黑"></button>

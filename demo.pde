@@ -32,6 +32,7 @@ int paintColor = #000000;
 float paintWeight = 3.0;
 ArrayList drawnShapes = new ArrayList();
 DrawnShape tempShape = null;
+DrawnShape latestShape = null;
 
 void setPaintTool(int t) { paintTool = t; }
 void setPaintColor(int r, int g, int b) { paintColor = color(r, g, b, 255); }
@@ -47,6 +48,7 @@ void addPaintText(String str) {
 void undoLastShape() {
   if (drawnShapes.size() > 0) {
     drawnShapes.remove(drawnShapes.size() - 1);
+    latestShape = null;
     mouseMoved();
   }
 }
@@ -232,10 +234,26 @@ void mousePressed() {
       }
   }
 
-  if (paintTool > 0) {
+  else if (paintTool == 1) {
     tempShape = new DrawnShape(paintTool, paintColor, paintWeight);
-    if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
-    else { tempShape.x1 = mouseX; tempShape.y1 = mouseY; tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
+    tempShape.addPoint(mouseX, mouseY);
+    return;
+  }
+  
+  else if (paintTool == 2 || paintTool == 3) {
+    
+    if (latestShape != null && latestShape.type == paintTool && latestShape.isOver(mouseX, mouseY)) {
+      draggingShape = latestShape;
+      dragOffsetX = mouseX - draggingShape.x1;
+      dragOffsetY = mouseY - draggingShape.y1;
+      return;
+    }
+
+    tempShape = new DrawnShape(paintTool, paintColor, paintWeight);
+    tempShape.x1 = mouseX; 
+    tempShape.y1 = mouseY; 
+    tempShape.x2 = mouseX; 
+    tempShape.y2 = mouseY;
     return;
   }
 
@@ -276,39 +294,39 @@ void mousePressed() {
 
 void mouseDragged() {
   if (draggingShape != null) {
+    float shapeW = draggingShape.x2 - draggingShape.x1;
+    float shapeH = draggingShape.y2 - draggingShape.y1;
     draggingShape.x1 = mouseX - dragOffsetX;
     draggingShape.y1 = mouseY - dragOffsetY;
+    if (draggingShape.type == 2 || draggingShape.type == 3) {
+      draggingShape.x2 = draggingShape.x1 + shapeW;
+      draggingShape.y2 = draggingShape.y1 + shapeH;
+    }
     mouseMoved();
     return;
   }
   
   if (tempShape != null) {
     if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
-    else if (paintTool == 2) { 
-      // --- 修改：直線工具強制鎖定 0, 45, 90 度 ---
+    else if (paintTool == 2) {
       float dx = mouseX - tempShape.x1;
       float dy = mouseY - tempShape.y1;
       float adx = abs(dx);
       float ady = abs(dy);
       
-      // 使用 tan(22.5) = 0.414 來判斷區間
       if (ady < adx * 0.414) {
-        // 水平線
         tempShape.x2 = mouseX;
         tempShape.y2 = tempShape.y1;
       } 
       else if (adx < ady * 0.414) {
-        // 垂直線
         tempShape.x2 = tempShape.x1;
         tempShape.y2 = mouseY;
       } 
       else {
-        // 45度斜線 (取較長的邊作為投影長度，確保線條長度足夠)
         float len = max(adx, ady);
         tempShape.x2 = tempShape.x1 + (dx > 0 ? len : -len);
         tempShape.y2 = tempShape.y1 + (dy > 0 ? len : -len);
       }
-      // ------------------------------------------
     }
     else { tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
     mouseMoved();
@@ -325,6 +343,7 @@ void mouseDragged() {
 void mouseReleased() {
   if (tempShape != null) {
     drawnShapes.add(tempShape);
+    latestShape = tempShape;
     tempShape = null;
     mouseMoved();
   }
@@ -862,9 +881,9 @@ void addFastPulseType(int ptype) {
     }
   }
   ArrayList blist = (ArrayList)bloodList.get(areaSelectIdx);
-  for(int i=0; i<pareaList.size(); i++) {                 
+  for(int i=0; i<pareaList.size(); i++) {
     PulseArea parea = (PulseArea)pareaList.get(i);
-    if(parea.idx == areaSelectIdx) {                
+    if(parea.idx == areaSelectIdx) {
       BloodType bt = new BloodType();
       bt.x = parea.x; bt.y = parea.y; bt.h = parea.h; bt.w = parea.w; bt.idx = parea.idx;
       bt.type = ptype;
@@ -877,10 +896,10 @@ void addFastPulseType(int ptype) {
 
 void addPulseTypeGroup(int ptype) {
   if(areaSelectIdx == -1) return;
-  int findId = 0; int group_size = 0; int group_slow_fast_size = 0;      
+  int findId = 0; int group_size = 0; int group_slow_fast_size = 0;
   ArrayList blist = (ArrayList)bloodList.get(areaSelectIdx);
-  if(blist.size() > 0) {                               
-    for(int i = blist.size()-1; i >= 0; i--) {   
+  if(blist.size() > 0) {
+    for(int i = blist.size()-1; i >= 0; i--) {
       BloodType bt = (BloodType)blist.get(i);
       if(ptype == bt.type) { blist.remove(i); findId = 1; } 
       else if(bt.type > 30 && bt.type < 50) { group_size++;
@@ -892,9 +911,9 @@ void addPulseTypeGroup(int ptype) {
     }
   }
   if(findId == 0) {
-    for(int i=0; i<pareaList.size(); i++) {                 
+    for(int i=0; i<pareaList.size(); i++) {
       PulseArea parea = (PulseArea)pareaList.get(i);
-      if(parea.idx == areaSelectIdx) {         
+      if(parea.idx == areaSelectIdx) {
         if(ptype > 30 && ptype < 50) group_size++;
         else if(ptype > 60 && ptype < 70) group_slow_fast_size++;
         BloodType bt = new BloodType();
@@ -906,14 +925,14 @@ void addPulseTypeGroup(int ptype) {
       }
     }
   }       
-  for(int i = blist.size()-1; i >= 0; i--) {   
+  for(int i = blist.size()-1; i >= 0; i--) {
     BloodType bt = (BloodType)blist.get(i);
     if(bt.type > 30 && bt.type < 50) { bt.group_size = group_size; blist.remove(i); blist.add(bt);
-    } 
+    }
     else if(bt.type > 60 && bt.type < 70) { bt.group_size = group_slow_fast_size; blist.remove(i); blist.add(bt);
-    } 
+    }
   }
-  mouseMoved(); 
+  mouseMoved();
 }
 
 void cancelPulseIdx(int idx) {
@@ -924,7 +943,7 @@ void cancelPulseIdx(int idx) {
     mouseMoved();
 }
 
-void cancelPulse() {    
+void cancelPulse() {
   if(areaSelectIdx == -1) return;
   cancelPulseIdx(areaSelectIdx);
 }
@@ -934,16 +953,16 @@ void clearAllPulses() {
         ArrayList blist = (ArrayList)bloodList.get(i);
         for(int j = blist.size()-1; j >= 0; j--) { blist.remove(j); }
     }
-    setTongueType(0); 
-    setTongueNote(""); 
+    setTongueType(0);
+    setTongueNote("");
     mouseMoved();
 }
 
 String getPulseObj() {            
   String str = "";
-  for(int i=0; i<bloodList.size(); i++) {                     
+  for(int i=0; i<bloodList.size(); i++) {
     ArrayList blist = (ArrayList)bloodList.get(i);
-    for(int j = blist.size()-1; j >= 0; j--) {   
+    for(int j = blist.size()-1; j >= 0; j--) {
       BloodType bt = (BloodType)blist.get(j);
       str += bt.idx + ":" + bt.type + "@";
     }
@@ -997,16 +1016,33 @@ class DrawnShape {
   }
   
   boolean isOver(float mx, float my) {
-    if (type != 4) return false;
-
-    textFont(fontTongueText);
-    float tw = textWidth(textVal);
+    if (type == 2) {
+      float l2 = dist(x1, y1, x2, y2);
+      if (l2 == 0) return false;
+      float t = ((mx - x1) * (x2 - x1) + (my - y1) * (y2 - y1)) / (l2 * l2);
+      t = max(0, min(1, t));
+      float projX = x1 + t * (x2 - x1);
+      float projY = y1 + t * (y2 - y1);
+      float d = dist(mx, my, projX, projY);
+      return (d < 10);
+    }
     
-    String[] lines = split(textVal, "\n");
-    float lineHeight = 20;
-    float th = lines.length * lineHeight; 
+    else if (type == 3) {
+      float r = dist(x1, y1, x2, y2);
+      float d = dist(mx, my, x1, y1);
+      return (abs(d - r) < 10);
+    }
     
-    return (mx >= x1 && mx <= x1 + tw + 20 && 
-            my >= y1 && my <= y1 + th + 10);
+    else if (type == 4) {
+      textFont(fontTongueText);
+      float tw = textWidth(textVal);
+      String[] lines = split(textVal, "\n");
+      float lineHeight = 20;
+      float th = lines.length * lineHeight;
+      return (mx >= x1 && mx <= x1 + tw + 20 && 
+              my >= y1 && my <= y1 + th + 10);
+    }
+    
+    return false;
   }
 }

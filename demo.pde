@@ -31,6 +31,7 @@ int paintTool = 0;
 int paintColor = #000000;
 float paintWeight = 3.0;
 ArrayList drawnShapes = new ArrayList();
+ArrayList redoShapes = new ArrayList();
 DrawnShape tempShape = null;
 DrawnShape latestShape = null;
 
@@ -47,13 +48,25 @@ void addPaintText(String str) {
 }
 void undoLastShape() {
   if (drawnShapes.size() > 0) {
+    DrawnShape s = (DrawnShape)drawnShapes.get(drawnShapes.size() - 1);
+    redoShapes.add(s);
     drawnShapes.remove(drawnShapes.size() - 1);
     latestShape = null;
     mouseMoved();
   }
 }
+void redoLastShape() {
+  if (redoShapes.size() > 0) {
+    DrawnShape s = (DrawnShape)redoShapes.get(redoShapes.size() - 1);
+    drawnShapes.add(s);
+    redoShapes.remove(redoShapes.size() - 1);
+    latestShape = s;
+    mouseMoved();
+  }
+}
 void clearPaint() {
   drawnShapes.clear();
+  redoShapes.clear();
   mouseMoved();
 }
 
@@ -345,6 +358,7 @@ void mouseReleased() {
     drawnShapes.add(tempShape);
     latestShape = tempShape;
     tempShape = null;
+    redoShapes.clear();
     mouseMoved();
   }
   draggingShape = null;

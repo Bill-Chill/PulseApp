@@ -29,7 +29,7 @@ String currentTongueText = "";
 
 int paintTool = 0;
 int paintColor = #000000;
-float paintWeight = 2.0;
+float paintWeight = 3.0;
 ArrayList drawnShapes = new ArrayList();
 DrawnShape tempShape = null;
 
@@ -284,6 +284,32 @@ void mouseDragged() {
   
   if (tempShape != null) {
     if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
+    else if (paintTool == 2) { 
+      // --- 修改：直線工具強制鎖定 0, 45, 90 度 ---
+      float dx = mouseX - tempShape.x1;
+      float dy = mouseY - tempShape.y1;
+      float adx = abs(dx);
+      float ady = abs(dy);
+      
+      // 使用 tan(22.5) = 0.414 來判斷區間
+      if (ady < adx * 0.414) {
+        // 水平線
+        tempShape.x2 = mouseX;
+        tempShape.y2 = tempShape.y1;
+      } 
+      else if (adx < ady * 0.414) {
+        // 垂直線
+        tempShape.x2 = tempShape.x1;
+        tempShape.y2 = mouseY;
+      } 
+      else {
+        // 45度斜線 (取較長的邊作為投影長度，確保線條長度足夠)
+        float len = max(adx, ady);
+        tempShape.x2 = tempShape.x1 + (dx > 0 ? len : -len);
+        tempShape.y2 = tempShape.y1 + (dy > 0 ? len : -len);
+      }
+      // ------------------------------------------
+    }
     else { tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
     mouseMoved();
     return;

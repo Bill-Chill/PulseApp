@@ -339,7 +339,6 @@
         }
 
         $(document).ready(function() {
-
             $("#hw_ratio").bind('input change', function() {
                 $("#hw_ratio_val").text($(this).val());
             });
@@ -496,6 +495,12 @@
                     return;
                 }
 
+                if ((e.ctrlKey || e.metaKey) && (key === 'y' || key === 'Y')) {
+                    e.preventDefault();
+                    $("#paint_redo").click();
+                    return;
+                }
+
                 if (key === " " || code === 32) {
                     e.preventDefault();
                     save();
@@ -598,6 +603,7 @@
             });
 
             $("#paint_undo").click(function() { var p = getP(); if(p) p.undoLastShape(); });
+            $("#paint_redo").click(function() { var p = getP(); if(p) p.redoLastShape(); });
             $("#paint_clear").click(function() { 
                 if(confirm("確定清空所有手繪內容？")) { var p = getP(); if(p) p.clearPaint(); } 
             });
@@ -928,7 +934,8 @@
                     <option value="5">5px</option>
                 </select>
 
-                <button id="paint_undo" class="pulse-btn" title="快捷鍵: ctrl+z" style="padding: 2px 8px; font-size: 14px;">復原</button>
+                <button id="paint_undo" class="pulse-btn" title="復原&#10;快捷鍵: ctrl+z" style="padding: 2px 8px; font-size: 14px;">⤣</button>
+                <button id="paint_redo" class="pulse-btn" title="取消復原&#10;快捷鍵: ctrl+y" style="padding: 2px 8px; font-size: 14px;">⤤</button>
                 <button id="paint_clear" class="pulse-btn" style="padding: 2px 8px; font-size: 14px; color: red;">清空繪圖</button>
 
                 <textarea id="paint_text_input" placeholder="輸入文字 (Enter確認, Shift+Enter換行)"

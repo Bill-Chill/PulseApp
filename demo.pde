@@ -34,6 +34,16 @@ ArrayList drawnShapes = new ArrayList();
 ArrayList redoShapes = new ArrayList();
 DrawnShape tempShape = null;
 DrawnShape latestShape = null;
+boolean isTouchMode = false;
+boolean isLongPressActive = false;
+
+void setTouchMode(boolean b) {
+  isTouchMode = b;
+}
+
+void setLongPressActive(boolean b) {
+  isLongPressActive = b;
+}
 
 void setPaintTool(int t) { paintTool = t; }
 void setPaintColor(int r, int g, int b) { paintColor = color(r, g, b, 255); }
@@ -270,6 +280,29 @@ void mousePressed() {
     return;
   }
 
+  else if (paintTool == 5) {
+      
+      if (latestShape != null && latestShape.type == paintTool && latestShape.isOver(mouseX, mouseY)) {
+        draggingShape = latestShape;
+        dragOffsetX = mouseX - draggingShape.x1;
+        dragOffsetY = mouseY - draggingShape.y1;
+        return;
+      }
+      
+      latestShape = null;
+
+      if (isTouchMode && !isLongPressActive) {
+         return; 
+      }
+
+      tempShape = new DrawnShape(paintTool, paintColor, paintWeight);
+      tempShape.x1 = mouseX; 
+      tempShape.y1 = mouseY;
+      tempShape.x2 = mouseX; 
+      tempShape.y2 = mouseY;
+      return;
+  }
+
   if (isOverText()) {
     draggingText = true;
     dragOffsetX = mouseX - textX;
@@ -341,6 +374,12 @@ void mouseDragged() {
         tempShape.y2 = tempShape.y1 + (dy > 0 ? len : -len);
       }
     }
+    else if (paintTool == 5) {
+       tempShape.x1 = mouseX;
+       tempShape.y1 = mouseY;
+       tempShape.x2 = mouseX;
+       tempShape.y2 = mouseY;
+    }
     else { tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
     mouseMoved();
     return;
@@ -355,10 +394,30 @@ void mouseDragged() {
 
 void mouseReleased() {
   if (tempShape != null) {
-    drawnShapes.add(tempShape);
-    latestShape = tempShape;
+    
+    boolean shouldSave = true;
+    
+    if (tempShape.type == 2 || tempShape.type == 3) {
+      float d = dist(tempShape.x1, tempShape.y1, tempShape.x2, tempShape.y2);
+      if (d < 5) {
+        shouldSave = false; 
+      }
+    }
+    else if (tempShape.type == 1) {
+       if (tempShape.points.size() < 2) {
+         shouldSave = false;
+       }
+    }
+
+    if (shouldSave) {
+      drawnShapes.add(tempShape);
+      latestShape = tempShape; 
+      redoShapes.clear(); 
+    } else {
+      latestShape = null; 
+    }
+    
     tempShape = null;
-    redoShapes.clear();
     mouseMoved();
   }
   draggingShape = null;
@@ -1026,6 +1085,8 @@ class DrawnShape {
       textAlign(LEFT, TOP);
       text(textVal, x1, y1);
       noFill();
+    } else if (type == 5) {
+       point(x1, y1);
     }
   }
   
@@ -1047,6 +1108,11 @@ class DrawnShape {
       return (abs(d - r) < 10);
     }
     
+    else if (type == 5) {
+      float d = dist(mx, my, x1, y1);
+      return (d < 10);
+    }
+
     else if (type == 4) {
       textFont(fontTongueText);
       float tw = textWidth(textVal);

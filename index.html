@@ -33,6 +33,11 @@
             background: #fff;
             box-shadow: 2px 2px 5px #ccc;
             touch-action: manipulation;
+
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .controls-area {
@@ -665,6 +670,9 @@
             var lastTwoFingerTapTime = 0;
 
             canvas.addEventListener('touchstart', function(e) {
+                var p = getP();
+                if (p) p.setTouchMode(true);
+
                 if (e.touches.length == 2) {
                     var currentTime = new Date().getTime();
                     var tapLength = currentTime - lastTwoFingerTapTime;
@@ -700,7 +708,9 @@
                         var scaleY = canvas.height / rect.height;
                         p.mouseX = (touch.clientX - rect.left) * scaleX;
                         p.mouseY = (touch.clientY - rect.top) * scaleY;
+                        p.setLongPressActive(true);
                         p.mousePressed(); 
+                        p.setLongPressActive(false);
                     }
                 }, 350);
                 
@@ -948,6 +958,7 @@
                     <option value="1">畫筆 (快捷鍵: Alt+1)</option>
                     <option value="2">直線 (快捷鍵: Alt+2)</option>
                     <option value="3">圓形 (快捷鍵: Alt+3)</option>
+                    <option value="5">點</option>
                 </select>
                 
                 <button class="color-btn active" data-r="0" data-g="0" data-b="0" style="background-color:black !important;" title="黑&#10循環切換: `"></button>
@@ -1016,12 +1027,18 @@
 
                 $.blockUI({
                     message: $('#question'),
+                    overlayCSS: { 
+                        cursor: 'default' 
+                    },
                     css: {
                         top: '20px',
                         left: '20px',
                         width: '800px'
                     }
                 });
+                $('.blockOverlay')
+                    .attr('title','點擊關閉視窗') 
+                    .bind('click touchstart', $.unblockUI);
             }, 50);
         }
     </script>

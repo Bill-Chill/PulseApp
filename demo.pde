@@ -528,8 +528,14 @@ void drawPulse() {
         if (bt.width_type > 0) {
            int y2 = 0;
            if(bt.width_type < 16) { 
-               y = bt.y+9; 
-               y2 = y + (bt.width_type - 12)*3; 
+               y = bt.y+9;
+               if (bt.width_type == 15) {
+                   int w = (bt.custom_width > 0) ? bt.custom_width : customSmallPulseWidth;
+                   y2 = y + w;
+               } else {
+                   y2 = y + (bt.width_type - 12)*3; 
+               }
+
            } else { 
                y = bt.y+5;
                y2 = y + (bt.width_type - 12)*3 + 5; 
@@ -558,7 +564,13 @@ void drawPulse() {
            int y2 = 0;
            if(bt.width_type < 16) { 
                y = bt.y+9;
-               y2 = y + (bt.width_type - 12)*3; 
+               if (bt.width_type == 15) {
+                   int w = (bt.custom_width > 0) ? bt.custom_width : customSmallPulseWidth;
+                   y2 = y + w;
+               } else {
+                   y2 = y + (bt.width_type - 12)*3; 
+               }
+
            } else { 
                y = bt.y+5;
                y2 = y + (bt.width_type - 12)*3 + 5; 
@@ -885,6 +897,11 @@ void addPulseType(int ptype) {
                  blist.remove(i); 
              } else {
                  bt.width_type = ptype;
+                 if (ptype == 15) {
+                     bt.custom_width = customSmallPulseWidth;
+                 } else {
+                     bt.custom_width = 0;
+                 }
              }
              foundBase = true;
              break; 
@@ -954,6 +971,9 @@ void addPulseWithWidth(int ptype, int wtype) {
         bt.type = ptype; 
         bt.width_type = wtype; 
         bt.group_size = 0;
+        if (wtype == 15) {
+            bt.custom_width = customSmallPulseWidth;
+        }
         if (ptype == 19) {
             bt.weak_percent = inheritedPercent;
             bt.weak_is_right = inheritedIsRight;

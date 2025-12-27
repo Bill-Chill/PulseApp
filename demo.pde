@@ -94,14 +94,27 @@ class BloodType {
 
   int weak_percent = 50;
   boolean weak_is_right = false;
+
+  int custom_width = 0;
+  String custom_text = "";
 }
 
 int tempWeakPercent = 50;
 boolean tempWeakIsRight = false;
+int customSmallPulseWidth = 11;
+String globalCustomPulseText = "";
 
 void setHalfWeakParams(int percent, boolean isRight) {
   tempWeakPercent = percent;
   tempWeakIsRight = isRight;
+}
+
+void setSmallPulse3Width(int w) {
+  customSmallPulseWidth = w;
+}
+
+void setCustomPulseText(String t) {
+  globalCustomPulseText = t;
 }
 
 void setup() {
@@ -577,11 +590,24 @@ void drawPulse() {
       else if(bt.type >= 13 && bt.type <= 17) {     
         int y = bt.y+5;
         int y2 = 0; int x = bt.x+22; int x2 = x+120; 
-        if(bt.type < 16) { y = bt.y+9;
-        y2 = y+(bt.type-12)*3; } else { y = bt.y+5; y2 = y+(bt.type-12)*3+5; }
+        
+        if(bt.type < 16) { 
+           y = bt.y+9;
+           if (bt.type == 15) {
+               int w = (bt.custom_width > 0) ? bt.custom_width : customSmallPulseWidth;
+               y2 = y + w; 
+           } else {
+               y2 = y + (bt.type-12)*3; 
+           }
+
+        } else { 
+           y = bt.y+5; 
+           y2 = y+(bt.type-12)*3+5; 
+        }
+
         line(x, y, x2, y);
         line(x, y2, x2, y2);
-      } 
+      }
       else if(bt.type == 18) {     
         int y = bt.y+5;
         int y2 = y+8; int x = bt.x+22; int x2 = x+120; 
@@ -823,6 +849,24 @@ void drawPulse() {
         text("無", cx, cy-2);
         textAlign(LEFT, BASELINE);
         noFill();
+      } else if(bt.type == 56) {
+        int row = bt.idx % 5;
+        int fixedY = bt.y + (2 - row) * area_height;
+        int cx = bt.x + 87;
+        int cy = fixedY + 17;
+        
+        strokeWeight(3);
+        noFill();
+        ellipse(cx, cy-1.5, 40, 40);
+        
+        fill(0);
+        textFont(fontWu);
+        textAlign(CENTER, CENTER);
+        
+        text(bt.custom_text, cx, cy-2);
+        
+        textAlign(LEFT, BASELINE);
+        noFill();
       }
     }
   }
@@ -867,6 +911,12 @@ void addPulseType(int ptype) {
         bt.type = ptype;
         bt.group_size = 0;
         bt.width_type = 0;
+        if (ptype == 15) {
+            bt.custom_width = customSmallPulseWidth;
+        }
+        if (ptype == 56) {
+            bt.custom_text = globalCustomPulseText;
+        }
         if (ptype == 19) {
             bt.weak_percent = tempWeakPercent;
             bt.weak_is_right = tempWeakIsRight;
@@ -992,6 +1042,9 @@ void addPulseTypeGroup(int ptype) {
         BloodType bt = new BloodType();
         bt.x = parea.x; bt.y = parea.y;
         bt.h = parea.h; bt.w = parea.w; bt.idx = parea.idx; bt.type = ptype;
+        if (ptype == 56) {
+            bt.custom_text = globalCustomPulseText;
+        }
         if(ptype > 60 && ptype < 70) bt.group_size = group_slow_fast_size;
         else if(ptype > 30 && ptype < 50) bt.group_size = group_size;
         blist.add(bt);

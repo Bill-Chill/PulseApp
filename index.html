@@ -4,7 +4,7 @@
 <head>
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=1100, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <script src="processing.js" type="text/javascript"></script>
     <script src="jquery-1.5.2.min.js" type="text/javascript"></script>
     <script src="jquery.blockUI.js" type="text/javascript"></script>
@@ -243,6 +243,75 @@
             background: none;
         }
 
+        /* --- 手機直向暴力縮放模式 (修正版) --- */
+        @media screen and (max-width: 1000px) and (orientation: portrait) {
+            
+            /* 1. Body 歸零：移除邊距，避免座標計算誤差 */
+            body {
+                min-width: 100vw !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow-x: hidden; /* 防止水平捲軸 */
+                background: #f0f0f0; /* 補回背景色 */
+            }
+
+            /* 2. 主容器：移除 align-items: center，解決按鈕偏左問題 */
+            .main-container {
+                display: flex;
+                flex-direction: column;
+                width: 100vw;
+                gap: 0px;
+                /* 關鍵：讓子元素靠左對齊，而不是置中 */
+                align-items: flex-start; 
+            }
+
+            /* 3. 畫布區域：確保畫布置中 */
+            .canvas-area {
+                flex: none;
+                width: 100vw;
+                display: flex;
+                justify-content: center;
+                margin-bottom: 5px;
+                padding-top: 10px; /* 上方留點空隙 */
+            }
+
+            canvas {
+                width: 100vw !important;
+                height: auto !important;
+                max-width: 780px;
+                /* 4. [關鍵修正] 禁止畫布上的預設手勢 (捲動/縮放)，解決觸控不準 */
+                touch-action: manipulation !important; 
+            }
+
+            /* 5. 控制面板：維持暴力縮放，但修正對齊 */
+            .controls-area {
+                flex: none;
+                
+                /* 拉寬 125% 讓按鈕橫排 */
+                width: 125vw; 
+                
+                /* 縮小 0.8 回到 100% 寬度 */
+                transform: scale(0.8);
+                
+                /* [關鍵修正] 縮放基準點設為「左上角」，確保左邊不被切掉 */
+                transform-origin: top left;
+                
+                margin-left: 0;
+                box-sizing: border-box;
+                padding-left: 5px; /* 左側稍微留白，避免貼死 */
+            }
+
+            /* 6. 防止按鈕換行 */
+            .flex-row {
+                display: flex;
+                flex-wrap: nowrap;
+            }
+            
+            .control-section {
+                white-space: nowrap;
+            }
+        }
+
     </style>
     <script type="text/javascript">
         function getP() {
@@ -352,6 +421,58 @@
                 $("#half_weak_menu").fadeOut(200);
             });
 
+            $("#sp3_width").bind('input change', function() {
+                $("#sp3_width_val").text($(this).val());
+            });
+
+            $("#sp3_cancel").click(function() {
+                $("#small_pulse_menu").fadeOut(200);
+            });
+
+            $("#sp3_confirm").click(function() {
+                var w = parseInt($("#sp3_width").val());
+                var p = getP();
+                
+                if (p) {
+                    p.setSmallPulse3Width(w);
+                    applyPulse(15);
+                    
+                    var btn = $('.pulse-btn[data-type="15"]');
+                    if (isBatchMode) {
+                        $(".pulse-btn").removeClass("active");
+                        btn.addClass("active");
+                    } else {
+                        btn.css("background-color", "#ffffcc");
+                        setTimeout(function(){ btn.css("background-color", ""); }, 150);
+                    }
+                }
+                $("#small_pulse_menu").fadeOut(200);
+            });
+
+            $("#cp_cancel").click(function() {
+                $("#custom_pulse_menu").fadeOut(200);
+            });
+
+            $("#cp_confirm").click(function() {
+                var txt = $("#cp_text").val();
+                
+                var p = getP();
+                if (p) {
+                    p.setCustomPulseText(txt);
+                    applyPulse(56);
+                    
+                    var btn = $('.pulse-btn[data-type="56"]');
+                    if (isBatchMode) {
+                        $(".pulse-btn").removeClass("active");
+                        btn.addClass("active");
+                    } else {
+                        btn.css("background-color", "#ffffcc");
+                        setTimeout(function(){ btn.css("background-color", ""); }, 150);
+                    }
+                }
+                $("#custom_pulse_menu").fadeOut(200);
+            });
+
             $("#hw_confirm").click(function() {
                 var ratio = parseInt($("#hw_ratio").val());
                 var isRight = $("#hw_is_right").is(":checked");
@@ -380,7 +501,7 @@
                 'z': 31, 'x': 34, 'c': 52, 'v': 53, 
                 'b': 32, 'n': 33, 'm': 51,
                 ',': 38, '.': 36, '/': 95, 'l': 40, ';': 96,
-                'k': 41, 'j': 35, 'h': 37, 'u': 39, 'i': 55, 'o': 54,
+                'k': 41, 'j': 35, 'h': 37, 'u': 39, 'i': 55, 'o': 54, 'p': 56,
                 '!': 71, '@': 72, '#': 73, '$': 74, '%': 75, '^': 76,
                 'Q': 81, 'W': 82, 'E': 83, 'A': 91, 'S': 92
             };
@@ -395,14 +516,16 @@
                 
                 if(keyChar) titleText = '快捷鍵: ' + keyChar;
 
-                if (type == 19) {
+                if (type == 19 || type == 15 || type == 56) {
                     titleText += "\n(長按：詳細設定)";
 
                     $(this).bind('mousedown touchstart', function(e) {
                         btnIsLongPress = false;
                         btnPressTimer = setTimeout(function() {
                             btnIsLongPress = true;
-                            $("#half_weak_menu").fadeIn(200);
+                            if (type == 19) $("#half_weak_menu").fadeIn(200);
+                            if (type == 15) $("#small_pulse_menu").fadeIn(200);
+                            if (type == 56) $("#custom_pulse_menu").fadeIn(200);
                         }, 350);
                     });
 
@@ -666,26 +789,35 @@
 
             var canvas = document.getElementById('pulse_canvas');
             var paintPressTimer;
-            var isPaintLongPress = false;
+            var isDrawingMode = false;
+            var startX = 0, startY = 0;
             var lastTwoFingerTapTime = 0;
+
+            function updateProcessingCoords(p, touch) {
+                var rect = canvas.getBoundingClientRect();
+                var scaleX = 780 / rect.width; 
+                var scaleY = 550 / rect.height;
+                p.mouseX = (touch.clientX - rect.left) * scaleX;
+                p.mouseY = (touch.clientY - rect.top) * scaleY;
+            }
+
 
             canvas.addEventListener('touchstart', function(e) {
                 var p = getP();
-                if (p) p.setTouchMode(true);
+                if (!p) return;
+                p.setTouchMode(true);
 
-                if (e.touches.length == 2) {
+                if (e.touches.length === 2) {
+                    clearTimeout(paintPressTimer);
+                    isDrawingMode = false;
+
                     var currentTime = new Date().getTime();
                     var tapLength = currentTime - lastTwoFingerTapTime;
-
                     if (tapLength < 300 && tapLength > 0) {
-                        e.preventDefault();
-                        
-                        var p = getP();
-                        if (p) {
-                            p.undoLastShape();
-                            $("#paint_undo").css("background-color", "#ffffcc");
-                            setTimeout(function(){ $("#paint_undo").css("background-color", ""); }, 150);
-                        }
+                        if (e.cancelable) e.preventDefault();
+                        p.undoLastShape();
+                        $("#paint_undo").css("background-color", "#ffffcc");
+                        setTimeout(function(){ $("#paint_undo").css("background-color", ""); }, 150);
                         lastTwoFingerTapTime = 0;
                     } else {
                         lastTwoFingerTapTime = currentTime;
@@ -693,58 +825,57 @@
                     return;
                 }
 
-                if (e.touches.length > 2) return;
-
-                isPaintLongPress = false;
-
-                paintPressTimer = setTimeout(function() {
-                    isPaintLongPress = true;
-
+                if (e.touches.length === 1) {
                     var touch = e.touches[0];
-                    var p = getP();
-                    if (p) {
-                        var rect = canvas.getBoundingClientRect();
-                        var scaleX = canvas.width / rect.width;
-                        var scaleY = canvas.height / rect.height;
-                        p.mouseX = (touch.clientX - rect.left) * scaleX;
-                        p.mouseY = (touch.clientY - rect.top) * scaleY;
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+
+                    isDrawingMode = false;
+
+                    paintPressTimer = setTimeout(function() {
+                        isDrawingMode = true;
+                        updateProcessingCoords(p, touch);
                         p.setLongPressActive(true);
                         p.mousePressed(); 
                         p.setLongPressActive(false);
-                    }
-                }, 350);
-                
+                    }, 350);
+                }
             }, {passive: false});
 
             canvas.addEventListener('touchmove', function(e) {
-                if (isPaintLongPress) {
-                    e.preventDefault();
+                if (e.touches.length !== 1) return;
+
+                var touch = e.touches[0];
+                var moveDist = Math.hypot(touch.clientX - startX, touch.clientY - startY);
+
+                if (isDrawingMode) {
+                    if (e.cancelable) e.preventDefault(); 
                     
-                    var touch = e.touches[0];
                     var p = getP();
-                    if (p) {
-                        var rect = canvas.getBoundingClientRect();
-                        var scaleX = canvas.width / rect.width;
-                        var scaleY = canvas.height / rect.height;
-                        p.mouseX = (touch.clientX - rect.left) * scaleX;
-                        p.mouseY = (touch.clientY - rect.top) * scaleY;
-                        p.mouseDragged();
+                    updateProcessingCoords(p, touch);
+                    p.mouseDragged();
+                } 
+                else {
+                    if (moveDist > 10) {
+                        clearTimeout(paintPressTimer);
                     }
-                } else {
-                    clearTimeout(paintPressTimer);
                 }
             }, {passive: false});
 
             canvas.addEventListener('touchend', function(e) {
                 clearTimeout(paintPressTimer);
-                
-                if (isPaintLongPress) {
-                    e.preventDefault();
-                    var p = getP();
-                    if (p) {
-                        p.mouseReleased();
-                    }
-                    isPaintLongPress = false; 
+
+                var p = getP();
+                if (!p) return;
+
+                if (isDrawingMode) {
+                    if (e.cancelable) e.preventDefault();
+                    p.mouseReleased();
+                    isDrawingMode = false;
+                }
+                else if (e.touches.length === 0 && !isDrawingMode) {
+                     p.mousePressed();
+                     p.mouseReleased();
                 }
             }, {passive: false});
         });
@@ -781,6 +912,43 @@
             <div style="text-align:right;">
                 <button id="hw_cancel" style="padding:6px 12px; background:#ccc; border:none; border-radius:4px; cursor:pointer; margin-right:10px;">取消</button>
                 <button id="hw_confirm" style="padding:6px 20px; background:#2196F3; color:white; border:none; border-radius:4px; cursor:pointer;">確定</button>
+            </div>
+        </div>
+
+        <div id="small_pulse_menu" style="display:none; position:absolute; top: 5px; right: 5px; background:white; padding:20px; border:2px solid #2196F3; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:2000; width:250px;">
+            <h3 style="margin-top:0; color:#333;">小脈3 寬度設定</h3>
+            
+            <div style="margin-bottom:15px;">
+                <label>寬度: <span id="sp3_width_val">11</span>px</label>
+                <input type="range" id="sp3_width" min="3" max="20" step="1" value="11" style="width:100%;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#666;">
+                    <span>窄</span><span>寬</span>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <button id="sp3_cancel" style="padding:6px 12px; background:#ccc; border:none; border-radius:4px; cursor:pointer; margin-right:10px;">取消</button>
+                <button id="sp3_confirm" style="padding:6px 20px; background:#2196F3; color:white; border:none; border-radius:4px; cursor:pointer;">確定</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div style="font-size:12px; color:#888; line-height: 1.4;">
+                    小脈1: 3  /  小脈2: 6  /  小脈3: 11
+                </div>
+            </div>
+        </div>
+
+        <div id="custom_pulse_menu" style="display:none; position:absolute; top: 5px; right: 5px; background:white; padding:20px; border:2px solid #2196F3; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index:2000; width:250px;">
+            <h3 style="margin-top:0; color:#333;">自訂脈象文字</h3>
+            
+            <div style="margin-bottom:20px;">
+                <label>顯示文字 (建議1字):</label>
+                <input type="text" id="cp_text" value="" maxlength="2" style="width:100%; padding:5px; font-size:16px; text-align:center; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <div style="text-align:right;">
+                <button id="cp_cancel" style="padding:6px 12px; background:#ccc; border:none; border-radius:4px; cursor:pointer; margin-right:10px;">取消</button>
+                <button id="cp_confirm" style="padding:6px 20px; background:#2196F3; color:white; border:none; border-radius:4px; cursor:pointer;">確定</button>
             </div>
         </div>
 
@@ -931,6 +1099,7 @@
                         <br>
                         <button class="pulse-btn" data-type="55">無脈</button>
                         <button class="pulse-btn" data-type="54">平脈</button>
+                        <button class="pulse-btn" data-type="56">＿脈</button>
                     </div>
                 </div>
             </div>
@@ -988,7 +1157,7 @@
     style="width: 150px; height: 36px; font-size: 14px; padding: 4px; resize: vertical horizontal; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; margin-left: 5px;"></textarea>
                 
                 <div style="position: absolute; bottom: 2px; right: 5px; font-size: 14px; color: #666; text-align: right;">
-                    * 文字皆可拖曳<br>[觸控]長按：半弱脈設定 / 繪圖 / 拖曳 &nbsp;&nbsp; 雙指雙擊：復原
+                    * 文字皆可拖曳<br>[觸控]長按：設定半弱脈、小脈3 / 繪圖 / 拖曳 &nbsp;&nbsp; 雙指雙擊：復原
                 </div>
             </div>
 

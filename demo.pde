@@ -824,6 +824,7 @@ void drawPulse() {
         int y = bt.y + 23;
         fill(0);
         textFont(fontStar);
+        textAlign(LEFT, BASELINE);
         text("☆", x, y);
         noFill();
       } else if(bt.type == 96) {
@@ -831,6 +832,7 @@ void drawPulse() {
         int y = bt.y + 28;
         fill(0);
         textFont(fontArrow);
+        textAlign(LEFT, BASELINE);
         text("↷", x, y);
         noFill();
       } else if(bt.type == 54) {

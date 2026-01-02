@@ -820,8 +820,8 @@ void drawPulse() {
         textAlign(LEFT, BASELINE);
         noFill();
       } else if(bt.type == 95) {
-        int x = bt.x + 10;
-        int y = bt.y + 22;
+        int x = bt.x + 1;
+        int y = bt.y + 23;
         fill(0);
         textFont(fontStar);
         text("☆", x, y);

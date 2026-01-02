@@ -828,7 +828,7 @@ void drawPulse() {
         noFill();
       } else if(bt.type == 96) {
         int x = bt.x + 170;
-        int y = bt.y + 20;
+        int y = bt.y + 28;
         fill(0);
         textFont(fontArrow);
         text("↷", x, y);
@@ -916,7 +916,7 @@ void addPulseType(int ptype) {
       if(ptype == bt.type) { blist.remove(i); mouseMoved(); return;} 
       int p1 = (int)(bt.type/10);
       int p2 = (int)(ptype/10);
-      if(p1 == p2 && ptype < 100) { blist.remove(i); }
+      if(p1 == p2 && ptype < 90) { blist.remove(i); }
     }
   } 
   

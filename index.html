@@ -362,7 +362,7 @@
             } else {
                 pendingBasePulse = 0;
                 $(".pulse-btn").removeClass("waiting");
-                if (type >= 90) p.addLongPulseType(type);
+                if (type >= 90 && type <= 92) p.addLongPulseType(type);
                 else if (type >= 60 && type < 70) p.addFastPulseType(type);
                 else if ((type >= 30 && type < 60)) p.addPulseTypeGroup(type);
                 else p.addPulseType(type);

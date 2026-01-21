@@ -417,7 +417,7 @@ void mouseReleased() {
       }
     }
     else if (tempShape.type == 1) {
-       if (tempShape.points.size() < 2) {
+       if (tempShape.points.size() < 1) {
          shouldSave = false;
        }
     }
@@ -1147,6 +1147,10 @@ class DrawnShape {
           vertex(p.x, p.y);
         }
         endShape();
+      }
+      else if (points.size() == 1) {
+        PVector p = (PVector)points.get(0);
+        point(p.x, p.y);
       }
     } else if (type == 2) {
       line(x1, y1, x2, y2);

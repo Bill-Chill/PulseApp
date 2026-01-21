@@ -1180,6 +1180,13 @@
             var canvas = document.getElementById('pulse_canvas');
             var p = getP();
             
+            var $toolSelect = $("#paint_tool");
+            var originalTool = $toolSelect.val();
+
+            if (originalTool !== "0") {
+                $toolSelect.val("0").trigger("change");
+            }
+
             if (p) {
                 p.cancelPressed();
 		        p.mouseX = 745;
@@ -1208,6 +1215,10 @@
                 $('.blockOverlay')
                     .attr('title','點擊關閉視窗') 
                     .bind('click touchstart', $.unblockUI);
+
+                    if (originalTool !== "0") {
+                    $toolSelect.val(originalTool).trigger("change");
+                }
             }, 50);
         }
     </script>

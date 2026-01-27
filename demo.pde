@@ -276,7 +276,7 @@ void mousePressed() {
     return;
   }
   
-  else if (paintTool == 2 || paintTool == 3) {
+  else if (paintTool == 2 || paintTool == 3 || paintTool == 5) {
     
     if (latestShape != null && latestShape.type == paintTool && latestShape.isOver(mouseX, mouseY)) {
       draggingShape = latestShape;
@@ -291,29 +291,6 @@ void mousePressed() {
     tempShape.x2 = mouseX; 
     tempShape.y2 = mouseY;
     return;
-  }
-
-  else if (paintTool == 5) {
-      
-      if (latestShape != null && latestShape.type == paintTool && latestShape.isOver(mouseX, mouseY)) {
-        draggingShape = latestShape;
-        dragOffsetX = mouseX - draggingShape.x1;
-        dragOffsetY = mouseY - draggingShape.y1;
-        return;
-      }
-      
-      latestShape = null;
-
-      if (isTouchMode && !isLongPressActive) {
-         return; 
-      }
-
-      tempShape = new DrawnShape(paintTool, paintColor, paintWeight);
-      tempShape.x1 = mouseX; 
-      tempShape.y1 = mouseY;
-      tempShape.x2 = mouseX; 
-      tempShape.y2 = mouseY;
-      return;
   }
 
   if (isOverText()) {
@@ -357,7 +334,7 @@ void mouseDragged() {
     float shapeH = draggingShape.y2 - draggingShape.y1;
     draggingShape.x1 = mouseX - dragOffsetX;
     draggingShape.y1 = mouseY - dragOffsetY;
-    if (draggingShape.type == 2 || draggingShape.type == 3) {
+    if (draggingShape.type == 2 || draggingShape.type == 3 || draggingShape.type == 5) {
       draggingShape.x2 = draggingShape.x1 + shapeW;
       draggingShape.y2 = draggingShape.y1 + shapeH;
     }
@@ -387,12 +364,6 @@ void mouseDragged() {
         tempShape.y2 = tempShape.y1 + (dy > 0 ? len : -len);
       }
     }
-    else if (paintTool == 5) {
-       tempShape.x1 = mouseX;
-       tempShape.y1 = mouseY;
-       tempShape.x2 = mouseX;
-       tempShape.y2 = mouseY;
-    }
     else { tempShape.x2 = mouseX; tempShape.y2 = mouseY; }
     mouseMoved();
     return;
@@ -410,7 +381,7 @@ void mouseReleased() {
     
     boolean shouldSave = true;
     
-    if (tempShape.type == 2 || tempShape.type == 3) {
+    if (tempShape.type == 2 || tempShape.type == 3 || tempShape.type == 5) {
       float d = dist(tempShape.x1, tempShape.y1, tempShape.x2, tempShape.y2);
       if (d < 5) {
         shouldSave = false; 
@@ -1154,6 +1125,19 @@ class DrawnShape {
       }
     } else if (type == 2) {
       line(x1, y1, x2, y2);
+    } else if (type == 5) {
+      line(x1, y1, x2, y2); // 先畫直線
+      
+      // 計算箭頭角度
+      float angle = atan2(y2 - y1, x2 - x1);
+      float arrowSize = 12 + w * 2; // 箭頭大小隨筆畫粗細微調
+      
+      pushMatrix();
+      translate(x2, y2);
+      rotate(angle);
+      line(0, 0, -arrowSize, -arrowSize * 0.5); // 上翼
+      line(0, 0, -arrowSize, arrowSize * 0.5);  // 下翼
+      popMatrix();
     } else if (type == 3) {
       float r = dist(x1, y1, x2, y2);
       ellipseMode(CENTER);
@@ -1164,13 +1148,11 @@ class DrawnShape {
       textAlign(LEFT, TOP);
       text(textVal, x1, y1);
       noFill();
-    } else if (type == 5) {
-       point(x1, y1);
     }
   }
   
   boolean isOver(float mx, float my) {
-    if (type == 2) {
+    if (type == 2 || type == 5) {
       float l2 = dist(x1, y1, x2, y2);
       if (l2 == 0) return false;
       float t = ((mx - x1) * (x2 - x1) + (my - y1) * (y2 - y1)) / (l2 * l2);
@@ -1187,11 +1169,6 @@ class DrawnShape {
       return (abs(d - r) < 10);
     }
     
-    else if (type == 5) {
-      float d = dist(mx, my, x1, y1);
-      return (d < 10);
-    }
-
     else if (type == 4) {
       textFont(fontTongueText);
       float tw = textWidth(textVal);

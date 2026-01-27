@@ -594,6 +594,9 @@
                     } else if (key === '3') {
                         $("#paint_tool").val("3").trigger("change");
                         return;
+                    } else if (key === '4') {
+                        $("#paint_tool").val("5").trigger("change");
+                        return;
                     } else if (key === '`') {
                         $("#paint_tool").val("0").trigger("change");
                         return;
@@ -1128,7 +1131,7 @@
                     <option value="1">畫筆 (快捷鍵: Alt+1)</option>
                     <option value="2">直線 (快捷鍵: Alt+2)</option>
                     <option value="3">圓形 (快捷鍵: Alt+3)</option>
-                    <option value="5">點</option>
+                    <option value="5">箭頭 (快捷鍵: Alt+4)</option>
                 </select>
                 
                 <button class="color-btn active" data-r="0" data-g="0" data-b="0" style="background-color:black !important;" title="黑&#10循環切換: `"></button>

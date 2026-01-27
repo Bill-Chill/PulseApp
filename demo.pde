@@ -344,7 +344,7 @@ void mouseDragged() {
   
   if (tempShape != null) {
     if (paintTool == 1) tempShape.addPoint(mouseX, mouseY);
-    else if (paintTool == 2) {
+    else if ((paintTool == 2 || paintTool == 5) && keyPressed && keyCode == SHIFT) {
       float dx = mouseX - tempShape.x1;
       float dy = mouseY - tempShape.y1;
       float adx = abs(dx);

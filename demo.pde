@@ -1126,17 +1126,14 @@ class DrawnShape {
     } else if (type == 2) {
       line(x1, y1, x2, y2);
     } else if (type == 5) {
-      line(x1, y1, x2, y2); // 先畫直線
-      
-      // 計算箭頭角度
+      line(x1, y1, x2, y2);
       float angle = atan2(y2 - y1, x2 - x1);
-      float arrowSize = 12 + w * 2; // 箭頭大小隨筆畫粗細微調
-      
+      float arrowSize = 12 + w * 2;
       pushMatrix();
       translate(x2, y2);
       rotate(angle);
-      line(0, 0, -arrowSize, -arrowSize * 0.5); // 上翼
-      line(0, 0, -arrowSize, arrowSize * 0.5);  // 下翼
+      line(0, 0, -arrowSize, -arrowSize * 0.5);
+      line(0, 0, -arrowSize, arrowSize * 0.5);
       popMatrix();
     } else if (type == 3) {
       float r = dist(x1, y1, x2, y2);

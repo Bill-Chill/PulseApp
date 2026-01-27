@@ -670,6 +670,7 @@
                 }
 
                 if (key && keyMap[key]) {
+                    if ($("#paint_tool").val() !== "0") return;
                     var type = keyMap[key];
                     var btn = $('.pulse-btn[data-type="' + type + '"]');
                     if(btn.length) handlePulseClick(type, btn, e);

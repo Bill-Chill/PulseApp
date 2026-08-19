@@ -666,6 +666,28 @@
                     return;
                 }
 
+                                if ((e.ctrlKey || e.metaKey) && (key === 'c' || key === 'C')) {
+                    e.preventDefault();
+                    var p = getP();
+                    if (p) {
+                        p.copySelectedArea();
+                        p.setFlash(true);
+                        setTimeout(function() {
+                            p.setFlash(false);
+                        }, 150);
+                    }
+                    return;
+                }
+
+                if ((e.ctrlKey || e.metaKey) && (key === 'v' || key === 'V')) {
+                    e.preventDefault();
+                    var p = getP();
+                    if (p) {
+                        p.pasteToSelectedArea();
+                    }
+                    return;
+                }
+
                 if (key === " " || code === 32) {
                     e.preventDefault();
                     save();
@@ -1228,3 +1250,4 @@
     </script>
 </body>
 </html>
+

@@ -36,6 +36,8 @@ DrawnShape tempShape = null;
 DrawnShape latestShape = null;
 boolean isTouchMode = false;
 boolean isLongPressActive = false;
+ArrayList clipboardPulse = new ArrayList();
+boolean isFlashing = false;
 
 void setTouchMode(boolean b) {
   isTouchMode = b;
@@ -115,6 +117,67 @@ void setSmallPulse3Width(int w) {
 
 void setCustomPulseText(String t) {
   globalCustomPulseText = t;
+}
+
+void setFlash(boolean b) {
+  isFlashing = b;
+  mouseMoved();
+}
+
+void copySelectedArea() {
+  if(areaSelectIdx != -1) {
+    clipboardPulse.clear();
+    ArrayList blist = (ArrayList)bloodList.get(areaSelectIdx);
+    for(int i=0; i<blist.size(); i++) {
+      BloodType bt = (BloodType)blist.get(i);
+      BloodType newBt = new BloodType();
+      newBt.type = bt.type;
+      newBt.group_size = bt.group_size;
+      newBt.width_type = bt.width_type;
+      newBt.weak_percent = bt.weak_percent;
+      newBt.weak_is_right = bt.weak_is_right;
+      newBt.custom_width = bt.custom_width;
+      newBt.custom_text = bt.custom_text;
+      clipboardPulse.add(newBt);
+    }
+  }
+}
+
+void pasteToSelectedArea() {
+  if(areaSelectIdx != -1 && clipboardPulse.size() > 0) {
+    ArrayList blist = (ArrayList)bloodList.get(areaSelectIdx);
+    blist.clear();
+    
+    PulseArea parea = null;
+    for(int i=0; i<pareaList.size(); i++) {
+      PulseArea pa = (PulseArea)pareaList.get(i);
+      if(pa.idx == areaSelectIdx) {
+        parea = pa;
+        break;
+      }
+    }
+    
+    if(parea != null) {
+      for(int i=0; i<clipboardPulse.size(); i++) {
+        BloodType bt = (BloodType)clipboardPulse.get(i);
+        BloodType newBt = new BloodType();
+        newBt.x = parea.x; 
+        newBt.y = parea.y; 
+        newBt.w = parea.w; 
+        newBt.h = parea.h; 
+        newBt.idx = parea.idx;
+        newBt.type = bt.type;
+        newBt.group_size = bt.group_size;
+        newBt.width_type = bt.width_type;
+        newBt.weak_percent = bt.weak_percent;
+        newBt.weak_is_right = bt.weak_is_right;
+        newBt.custom_width = bt.custom_width;
+        newBt.custom_text = bt.custom_text;
+        blist.add(newBt);
+      }
+    }
+    mouseMoved();
+  }
 }
 
 void setup() {
@@ -210,7 +273,11 @@ void mouseMoved() {
       for(int i=0; i<pareaList.size(); i++) {
         PulseArea parea = (PulseArea)pareaList.get(i);
         if(areaSelectIdx == parea.idx) {
-          fill(255, 255, 0);
+          if (isFlashing) {
+            fill(0, 255, 255);
+          } else {
+            fill(255, 255, 0);
+          }
           rect(parea.x, parea.y, parea.w, parea.h);
         } else {
           if(mouseX >= parea.x && mouseX <= (parea.x+parea.w) && mouseY >= parea.y && mouseY <= (parea.y+parea.h)) { 
